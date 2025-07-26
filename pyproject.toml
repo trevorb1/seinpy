@@ -1,0 +1,24 @@
+[project]
+name = "seinpy"
+version = "0.1.0"
+description = "Seinfeld Script Database"
+readme = "README.md"
+authors = [
+    { name = "trevorb1", email = "trevor_barnes@sfu.ca" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "jupyter>=1.1.1",
+    "kagglehub>=0.3.12",
+    "polars>=1.31.0",
+    "pydantic>=2.11.7",
+    "requests>=2.32.4",
+]
+
+[project.scripts]
+seinpy = "seinpy:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,2 +1,2 @@
-# seinfeld
+# seinpy
 Seinfeld Script Database
