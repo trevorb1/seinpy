@@ -1,9 +1,7 @@
 from __future__ import annotations
 from typing import List
 from seinpy.schema import Episode
-from seinpy.scripts.script_extractor import ScriptExtractor
-from seinpy.credits.credit_extractor import CreditExtractor
-from seinpy.ratings.rating_extractor import RatingExtractor
+from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor
 from seinpy.base import Writer
 
 
@@ -115,6 +113,7 @@ class Context:
         implementing multiple versions of the algorithm on its own.
         """
         raise NotImplementedError
+
 
 if __name__ == "__main__":
     # The client code picks a concrete strategy and passes it to the context.
