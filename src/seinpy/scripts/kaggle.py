@@ -7,6 +7,7 @@ from pathlib import Path
 
 from seinpy.schema import Script
 from seinpy.base import ScriptExtractor
+from seinpy.utils import get_episode_filter_priority
 
 import kagglehub
 import polars as pl
@@ -84,18 +85,20 @@ class KaggleScriptExtractor(ScriptExtractor):
         Raises:
             ValueError: If no episode_id, episode_num, or episode_title is provided.
         """
-        if episode_id is not None:
+        priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
+        
+        if priority == "episode_id":
             logger.info(f"Extracting script for episode_id: {episode_id}")
             df = self.data.filter(pl.col("episode_id") == episode_id)
-        elif episode_num is not None:
+        elif priority == "episode_num":
             logger.info(f"Extracting script for episode_num: {episode_num}")
             df = self.data.filter(pl.col("episode_num") == episode_num)
-        elif episode_title is not None:
+        elif priority == "episode_title":
             logger.info(f"Extracting script for episode_title: {episode_title}")
             df = self.data.filter(pl.col("episode_title") == episode_title)
         else:
             raise ValueError("No episode_id, episode_num, or episode_title provided")
-
+        
         # Check that we only have one episode
         if not self._is_unique_counts(df):
             raise ValueError(

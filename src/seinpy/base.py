@@ -135,16 +135,18 @@ class RatingExtractor(ABC):
         episode_id: str | None = None,
         episode_num: int | None = None,
         episode_title: str | None = None,
-    ) -> Rating:
+        as_df: bool = False,
+    ) -> Rating | pl.DataFrame:
         """Extract rating data from the given episode.
 
         Args:
             episode_num: The number of the episode to extract.
             episode_title: The title of the episode to extract.
             episode_id: The id of the episode to extract.
+            as_df: Whether to return a dataframe or a Rating object.
 
         Returns:
-            A Rating object.
+            A Rating object or a dataframe.
 
         Raises:
             ValueError: If the episode does not exist.
