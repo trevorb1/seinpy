@@ -1,6 +1,8 @@
 """Utility functions for extractors."""
 
 from typing import Optional
+import polars as pl
+from pathlib import Path
 
 TWO_PART_EPISODES = [
     {"episode_id": "S03E17", "episode_num": 34, "episode_title": "The Boyfriend"},
@@ -16,6 +18,8 @@ TWO_PART_EPISODES = [
     {"episode_id": "S09E21", "episode_num": 171, "episode_title": "The Chronicle"},
     {"episode_id": "S09E22", "episode_num": 172, "episode_title": "The Finale"},
 ]
+
+METADATA = pl.scan_csv(Path("src", "seinpy", "data", "data.csv"))
 
 
 def validate_episode_parameters(

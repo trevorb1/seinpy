@@ -49,8 +49,9 @@ class Script(BaseModel):
 
 class Rating(BaseModel):
     ref: EpisodeRef
-    season: Optional[int] = None
     rating: float
+    num_votes: int
+    link: str
 
 
 class Credit(BaseModel):
