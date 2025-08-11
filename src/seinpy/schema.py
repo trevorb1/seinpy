@@ -11,17 +11,15 @@ class ScriptLine(BaseModel):
 
     @field_validator("speaker", mode="after")
     def _capitalize(cls, value: str) -> str:
-        normalized = value.strip()
-        return normalized.title()
+        return value.strip().title()
 
 class Actor(BaseModel):
     name: str
-    role: str
+    role: Optional[str] = None
 
     @field_validator("name", "role", mode="after")
     def _capitalize(cls, value: str) -> str:
-        normalized = value.strip()
-        return normalized.title()
+        return value.strip().title()
 
 
 class EpisodeRef(BaseModel):
@@ -50,17 +48,21 @@ class Script(BaseModel):
 class Rating(BaseModel):
     ref: EpisodeRef
     rating: float
-    num_votes: int
-    link: str
+    num_votes: Optional[int] = None
+    link: Optional[str] = None
 
 
 class Credit(BaseModel):
     ref: EpisodeRef
+    description: Optional[str] = None
     date: Optional[str] = None
     writer: Optional[List[str]] = None
     director: Optional[List[str]] = None
     actors: Optional[List[Actor]] = None
 
+    @field_validator("writer", "director", mode="after")
+    def _capitalize(cls, values: List[str]) -> List[str]:
+        return [x.strip().title() for x in values]
 
 class Episode(BaseModel):
     """Episode schema composed of script, rating, and credit data."""

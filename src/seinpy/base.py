@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Union
 import polars as pl
 import logging
-from seinpy.schema import Episode, EpisodeRef, Script, Rating, Credit, ScriptLine
+from seinpy.schema import Actor, Episode, EpisodeRef, Script, Rating, Credit, ScriptLine
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class ScriptExtractor(ABC):
         pass
 
     @staticmethod
-    def _df_to_script(df: pl.DataFrame) -> Script:
+    def _df_to_script(df: pl.LazyFrame) -> Script:
         """Convert a dataframe to a script.
 
         Args:
@@ -52,6 +52,8 @@ class ScriptExtractor(ABC):
         Returns:
             A script object.
         """
+        df = df.collect()  # materialize the dataframe once
+
         episode_id = df.select("episode_id").unique().item()
         episode_num = df.select("episode_num").unique().item()
         episode_title = df.select("episode_title").unique().item()
@@ -65,7 +67,7 @@ class ScriptExtractor(ABC):
         return Script(ref=ref, script_lines=script_lines)
 
     @staticmethod
-    def _convert_episodeid_to_episodenum(df: pl.DataFrame) -> pl.DataFrame:
+    def _convert_episodeid_to_episodenum(df: pl.LazyFrame) -> pl.LazyFrame:
         """Convert the episode id to the episode number.
 
         Args:
@@ -83,7 +85,7 @@ class ScriptExtractor(ABC):
         return df.drop("episode_num").join(ranked, on="episode_id", how="left")
 
     @staticmethod
-    def _is_unique_counts(df: pl.DataFrame) -> bool:
+    def _is_unique_counts(df: pl.LazyFrame) -> bool:
         """Check that the episode identifiers are unique.
 
         Args:
@@ -104,7 +106,7 @@ class ScriptExtractor(ABC):
         return True
 
     @staticmethod
-    def _coordinate_columns(df: pl.DataFrame) -> pl.DataFrame:
+    def _coordinate_columns(df: pl.LazyFrame) -> pl.LazyFrame:
         """Coordinate the columns of the dataframe.
 
         Args:
@@ -157,6 +159,28 @@ class RatingExtractor(ABC):
         """
         pass
 
+    def _df_to_rating(self, df: pl.LazyFrame) -> Rating:
+        """Convert a dataframe to a rating."""
+
+        df = df.collect()  # materialize the dataframe once
+
+        episode_id = df.select("episode_id").unique().item()
+        episode_num = df.select("episode_num").unique().item()
+        episode_title = df.select("episode_title").unique().item()
+        rating = df.select("rating").unique().item()
+        num_votes = df.select("num_votes").unique().item()
+        link = df.select("link").unique().item()
+        return Rating(
+            ref=EpisodeRef(
+                episode_id=episode_id,
+                episode_num=episode_num,
+                episode_title=episode_title,
+            ),
+            rating=rating,
+            num_votes=num_votes,
+            link=link,
+        )
+
 
 class CreditExtractor(ABC):
     """Base strategy class for credit extractors."""
@@ -167,13 +191,15 @@ class CreditExtractor(ABC):
         episode_id: str | None = None,
         episode_num: int | None = None,
         episode_title: str | None = None,
-    ) -> Credit:
+        as_df: bool = False,
+    ) -> Credit | pl.DataFrame:
         """Extract credit data from the given episode.
 
         Args:
             episode_num: The number of the episode to extract.
             episode_title: The title of the episode to extract.
             episode_id: The id of the episode to extract.
+            as_df: Whether to return a dataframe or a Credit object.
 
         Returns:
             A Credit object.
@@ -186,6 +212,27 @@ class CreditExtractor(ABC):
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
         pass
+
+    @staticmethod
+    def _df_to_credits(df: pl.LazyFrame) -> Credit:
+        """Convert a dataframe to a credit."""
+
+        df = df.collect()  # materialize the dataframe once
+
+        actors = [Actor(name=actor) for actor in df.select("actors").item().split(",")]
+
+        return Credit(
+            ref=EpisodeRef(
+                episode_id=df.select("episode_id").item(),
+                episode_num=df.select("episode_num").item(),
+                episode_title=df.select("episode_title").item(),
+            ),
+            description=df.select("description").item(),
+            date=df.select("date").item(),
+            writer=df.select("writer").item().split(","),
+            director=df.select("director").item().split(","),
+            actors=actors,
+        )
 
 
 class Writer(ABC):

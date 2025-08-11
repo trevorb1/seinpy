@@ -1,25 +1,33 @@
 """Utility functions for extractors."""
 
 from typing import Optional
+import os
+from seinpy.constants import METADATA
 import polars as pl
-from pathlib import Path
+import logging
 
-TWO_PART_EPISODES = [
-    {"episode_id": "S03E17", "episode_num": 34, "episode_title": "The Boyfriend"},
-    {"episode_id": "S04E23", "episode_num": 62, "episode_title": "The Pilot"},
-    {"episode_id": "S05E18", "episode_num": 80, "episode_title": "The Raincoats"},
-    {
-        "episode_id": "S06E14",
-        "episode_num": 97,
-        "episode_title": "The Highlights of a Hundred",
-    },
-    {"episode_id": "S07E14", "episode_num": 123, "episode_title": "The Cadillac"},
-    {"episode_id": "S07E20", "episode_num": 126, "episode_title": "The Bottle Deposit"},
-    {"episode_id": "S09E21", "episode_num": 171, "episode_title": "The Chronicle"},
-    {"episode_id": "S09E22", "episode_num": 172, "episode_title": "The Finale"},
-]
+logger = logging.getLogger(__name__)
 
-METADATA = pl.scan_csv(Path("src", "seinpy", "data", "data.csv"))
+
+def get_omdb_api_key(key: str | None = None) -> str:
+    """Get the OMDB API key from the environment variables or the provided key.
+
+    Args:
+        key: The OMDB API key to use.
+
+    Returns:
+        The OMDB API key.
+
+    Raises:
+        ValueError: If the OMDB API key is not set.
+    """
+    if key:
+        return key
+    else:
+        key = os.getenv("OMDB")
+    if key is None:
+        raise ValueError("OMDB_API_KEY is not set")
+    return key
 
 
 def validate_episode_parameters(
@@ -66,3 +74,42 @@ def get_episode_filter_priority(
         return "episode_title"
     else:
         return ""
+
+
+def filter_metadata(
+    episode_id: str | None = None,
+    episode_num: int | None = None,
+    episode_title: str | None = None,
+    extractor_name: str | None = None,
+) -> pl.DataFrame:
+    """Filter the metadata dataframe based on the episode identifier.
+
+    Args:
+        priority: The priority of the episode identifier.
+        episode_id: The id of the episode to extract.
+        episode_num: The number of the episode to extract.
+        episode_title: The title of the episode to extract.
+        extractor_name: The name of the extractor.
+
+    Returns:
+        The filtered metadata dataframe.
+    """
+    
+    if not extractor_name:
+        extractor_name = "data"
+    
+    priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
+    
+    if priority == "episode_id":
+        logger.info(f"Extracting {extractor_name} for episode_id: {episode_id}")
+        df = METADATA.filter(pl.col("episode_id") == episode_id)
+    elif priority == "episode_num":
+        logger.info(f"Extracting {extractor_name} for episode_num: {episode_num}")
+        df = METADATA.filter(pl.col("episode_num") == episode_num)
+    elif priority == "episode_title":
+        logger.info(f"Extracting {extractor_name} for episode_title: {episode_title}")
+        df = METADATA.filter(pl.col("episode_title") == episode_title)
+    else:
+        raise ValueError("No episode_id, episode_num, or episode_title provided")
+
+    return df

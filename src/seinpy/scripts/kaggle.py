@@ -34,7 +34,7 @@ class KaggleScriptExtractor(ScriptExtractor):
     ) -> Script | pl.DataFrame:
         df = self.extract_script(episode_id, episode_num, episode_title)
         if as_df:
-            return df
+            return df.collect()
         return self._df_to_script(df)
 
     def _download_data(self) -> str:
@@ -71,7 +71,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         episode_id: str | None = None,
         episode_num: int | None = None,
         episode_title: str | None = None,
-    ) -> pl.DataFrame:
+    ) -> pl.LazyFrame:
         """Extract the script for the given episode.
 
         Args:
@@ -108,7 +108,7 @@ class KaggleScriptExtractor(ScriptExtractor):
                 f"episode_title: {episode_title}"
             )
 
-        return df.collect()
+        return df
 
     @staticmethod
     def _adjust_episode_id(df: pl.DataFrame) -> pl.DataFrame:
@@ -162,7 +162,7 @@ class KaggleScriptExtractor(ScriptExtractor):
             .alias("episode_id")
         )
 
-    def _read_script(self) -> pl.DataFrame:
+    def _read_script(self) -> pl.LazyFrame:
         """Read the script file.
 
         Returns:
@@ -183,7 +183,7 @@ class KaggleScriptExtractor(ScriptExtractor):
             )
         )
 
-    def _read_episode_info(self) -> pl.DataFrame:
+    def _read_episode_info(self) -> pl.LazyFrame:
         """Read the episode info file.
 
         Returns:
@@ -205,8 +205,8 @@ class KaggleScriptExtractor(ScriptExtractor):
 
     @staticmethod
     def _join_script_and_info(
-        episode_info: pl.DataFrame, script: pl.DataFrame
-    ) -> pl.DataFrame:
+        episode_info: pl.LazyFrame, script: pl.LazyFrame
+    ) -> pl.LazyFrame:
         """Join the script and info files.
 
         Args:
