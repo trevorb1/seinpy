@@ -1,6 +1,6 @@
 """Utility functions for extractors."""
 
-from typing import Optional
+from typing import List, Optional
 import os
 from seinpy.constants import METADATA
 import polars as pl
@@ -113,3 +113,19 @@ def filter_metadata(
         raise ValueError("No episode_id, episode_num, or episode_title provided")
 
     return df
+
+def get_episode_ids_from_seasons(seasons: int | List[int]) -> List[str]:
+    """Get the episode ids from the seasons.
+
+    Args:
+        seasons: The seasons to get the episode ids from.
+
+    Returns:
+        The episode ids.
+    """
+    episode_ids = []
+    for season in seasons:
+        df = METADATA.filter(pl.col("episode_id").str.starts_with(f"S0{season}"))
+        episode_ids.extend(df.select("episode_id").to_series().to_list())
+    return episode_ids
+    

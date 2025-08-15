@@ -170,6 +170,12 @@ class RatingExtractor(ABC):
         rating = df.select("rating").unique().item()
         num_votes = df.select("num_votes").unique().item()
         link = df.select("link").unique().item()
+        logger.debug(f"Rating: {rating}")
+        logger.debug(f"Num Votes: {num_votes}")
+        logger.debug(f"Link: {link}")
+        logger.debug(f"Episode ID: {episode_id}")
+        logger.debug(f"Episode Num: {episode_num}")
+        logger.debug(f"Episode Title: {episode_title}")
         return Rating(
             ref=EpisodeRef(
                 episode_id=episode_id,

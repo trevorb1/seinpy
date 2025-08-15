@@ -1,8 +1,12 @@
 """Main data schema"""
 
-from pydantic import BaseModel, field_validator
+from typing_extensions import Self
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ScriptLine(BaseModel):
@@ -12,6 +16,7 @@ class ScriptLine(BaseModel):
     @field_validator("speaker", mode="after")
     def _capitalize(cls, value: str) -> str:
         return value.strip().title()
+
 
 class Actor(BaseModel):
     name: str
@@ -23,11 +28,47 @@ class Actor(BaseModel):
 
 
 class EpisodeRef(BaseModel):
-    episode_id: str = None
-    episode_num: int = None
-    episode_title: str = None
+    episode_id: str
+    episode_num: int | None = None
+    episode_title: str | None = None
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EpisodeRef):
+            return False
+        return (
+            self.episode_id == other.episode_id
+            and self.episode_num == other.episode_num
+            and self.episode_title == other.episode_title
+        )
+
+    def __str__(self):
+        return f"EpisodeRef: {self.episode_id} (Num: {self.episode_num}, Title: {self.episode_title})"
+
+    def __bool__(self) -> bool:
+        """Return True if any of the reference fields are set."""
+        return any(
+            [
+                self.episode_id is not None,
+                self.episode_num is not None,
+                self.episode_title is not None,
+            ]
+        )
+
+    @field_validator("episode_title", mode="before")
+    @classmethod
+    def _validate_episode_title(cls, value: Optional[str]) -> Optional[str]:
+        """Capitalize first letter of each word, strip whitespace, and ensure period at end."""
+        if value is None:
+            return value
+        if not isinstance(value, str):
+            raise ValueError("episode_title must be a string")
+        title = " ".join(word.strip().title() for word in value.split())
+        if not any(title.endswith(x) for x in [".", "!", "?"]):
+            title += "."
+        return title
 
     @field_validator("episode_id", mode="before")
+    @classmethod
     def _validate_episode_id(cls, value: Optional[str]) -> Optional[str]:
         """Ensure episode_id is in the format 'SxxExx'."""
         if value is None:
@@ -48,8 +89,29 @@ class Script(BaseModel):
 class Rating(BaseModel):
     ref: EpisodeRef
     rating: float
-    num_votes: Optional[int] = None
-    link: Optional[str] = None
+    num_votes: int | None = None
+    link: str | None = None
+
+    @field_validator("num_votes", mode="before")
+    @classmethod
+    def _validate_num_votes(cls, value: int | None) -> int:
+        return value if value else 0
+
+    @field_validator("rating", mode="before")
+    @classmethod
+    def _validate_rating(cls, value: float) -> float:
+        if not 0 <= value <= 100:
+            raise ValueError("rating must be between 0 and 100")
+        return value
+
+    @field_validator("link", mode="before")
+    @classmethod
+    def _validate_link(cls, value: str | None) -> str | None:
+        if not value:
+            return ""
+        if not value.startswith("http"):
+            raise ValueError("link must be a valid URL")
+        return value
 
 
 class Credit(BaseModel):
@@ -64,40 +126,53 @@ class Credit(BaseModel):
     def _capitalize(cls, values: List[str]) -> List[str]:
         return [x.strip().title() for x in values]
 
+
 class Episode(BaseModel):
     """Episode schema composed of script, rating, and credit data."""
 
-    ref: EpisodeRef
-    script: Script
-    rating: Rating
-    credit: Credit
+    script: Optional[Script] = None
+    rating: Optional[Rating] = None
+    credit: Optional[Credit] = None
 
-    # @model_validator(mode="after")
-    # def _check_alignment(self):
-    #     episode_id = self.episode_id
-    #     episode_num = self.episode_num
-    #     episode_title = self.episode_title
+    @property
+    def ref(self) -> EpisodeRef:
+        """Get the episode reference from any component that has one."""
+        if self.script:
+            return self.script.ref
+        if self.rating:
+            return self.rating.ref
+        if self.credit:
+            return self.credit.ref
+        return EpisodeRef()
 
-    #     for part_name in ("script", "rating", "credit"):
-    #         part = values.get(part_name)
-    #         if part is None:
-    #             continue
-    #         ref = getattr(part, "ref", None)
-    #         if ref is None:
-    #             continue
-    #         if ref.episode_id is not None and ref.episode_id != eid:
-    #             raise ValueError(
-    #                 f"{part_name}.ref.episode_id does not match episode_id"
-    #             )
-    #         if ref.episode_num is not None and ref.episode_num != enum:
-    #             raise ValueError(
-    #                 f"{part_name}.ref.episode_num does not match episode_num"
-    #             )
-    #         if ref.episode_title is not None and ref.episode_title != etitle:
-    #             raise ValueError(
-    #                 f"{part_name}.ref.episode_title does not match episode_title"
-    #             )
-    #     return values
+    @model_validator(mode="after")
+    def _validate_metadata(self) -> Self:
+        """Validate episode metadata agaisnt one another."""
+        refs = {}
+        if self.script:
+            refs["script"] = self.script.ref
+        if self.rating:
+            refs["rating"] = self.rating.ref
+        if self.credit:
+            refs["credit"] = self.credit.ref
+
+        base_component = None
+        base_ref = None
+        for component, ref in refs.items():
+            if not base_ref:  # all of id, num, title are required in validation.
+                base_component = component
+                base_ref = ref
+            else:
+                if ref == base_ref:
+                    continue
+                else:
+                    logger.error(f"{component} ref:\n -> {ref}")
+                    logger.error(f"{base_component} ref:\n -> {base_ref}")
+                    raise ValueError(
+                        f"'{base_component}' ref does not match '{component}' ref.\n"
+                    )
+
+        return self
 
     def __str__(self):
         return f"Episode: {self.episode_title} (Rating: {self.rating.rating})"

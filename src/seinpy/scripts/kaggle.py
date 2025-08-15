@@ -62,9 +62,12 @@ class KaggleScriptExtractor(ScriptExtractor):
         """
         script = self._read_script()
         episode_info = self._read_episode_info()
-        df = self._join_script_and_info(episode_info, script)
-        df = self._convert_episodeid_to_episodenum(df)
-        return self._adjust_episode_id(df)
+        return (
+            self._join_script_and_info(episode_info, script)
+            .pipe(self._convert_episodeid_to_episodenum)
+            .pipe(self._adjust_episode_id)
+            .pipe(self._adjust_episode_num)
+        )
 
     def extract_script(
         self,
@@ -86,7 +89,7 @@ class KaggleScriptExtractor(ScriptExtractor):
             ValueError: If no episode_id, episode_num, or episode_title is provided.
         """
         priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
-        
+
         if priority == "episode_id":
             logger.info(f"Extracting script for episode_id: {episode_id}")
             df = self.data.filter(pl.col("episode_id") == episode_id)
@@ -98,7 +101,7 @@ class KaggleScriptExtractor(ScriptExtractor):
             df = self.data.filter(pl.col("episode_title") == episode_title)
         else:
             raise ValueError("No episode_id, episode_num, or episode_title provided")
-        
+
         # Check that we only have one episode
         if not self._is_unique_counts(df):
             raise ValueError(
@@ -161,6 +164,33 @@ class KaggleScriptExtractor(ScriptExtractor):
             .otherwise(pl.col("episode_id"))
             .alias("episode_id")
         )
+
+    @staticmethod
+    def _adjust_episode_num(df: pl.LazyFrame) -> pl.LazyFrame:
+        """Corrects the episode number.
+
+        The pilot episode and the next episode from this dataset are both num 1.
+        This function assumes that the S01E01 duplicate has been corrected.
+
+        Args:
+            df: The dataframe to adjust.
+
+        Returns:
+            The adjusted dataframe.
+        """
+
+        # ensure only one S01E01 exists
+        pilot = df.filter(pl.col("episode_id") == pl.lit("S01E01"))
+        assert pilot.select("episode_num").unique().collect().height == 1
+
+        df = df.with_columns(
+            pl.when(pl.col("episode_id") == pl.lit("S01E01"))
+            .then(pl.lit(0))  # change from 1 to 0
+            .otherwise(pl.col("episode_num"))
+            .alias("episode_num")
+        )
+
+        return df.with_columns((pl.col("episode_num") + 1).alias("episode_num"))
 
     def _read_script(self) -> pl.LazyFrame:
         """Read the script file.
