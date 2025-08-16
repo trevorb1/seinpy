@@ -5,9 +5,14 @@ https://www.kaggle.com/datasets/thec03u5/seinfeld-chronicles and originates from
 
 from pathlib import Path
 
+from seinpy.constants import TWO_PART_EPISODES
 from seinpy.schema import Script
 from seinpy.base import ScriptExtractor
-from seinpy.utils import get_episode_filter_priority
+from seinpy.utils import (
+    get_episode_filter_priority,
+    shift_episode_ids,
+    shift_episode_nums,
+)
 
 import kagglehub
 import polars as pl
@@ -65,8 +70,9 @@ class KaggleScriptExtractor(ScriptExtractor):
         return (
             self._join_script_and_info(episode_info, script)
             .pipe(self._convert_episodeid_to_episodenum)
-            .pipe(self._adjust_episode_id)
+            .pipe(self._correct_pilot_episode_id)
             .pipe(self._adjust_episode_num)
+            .pipe(self._correct_2_part_episodes)
         )
 
     def extract_script(
@@ -114,7 +120,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         return df
 
     @staticmethod
-    def _adjust_episode_id(df: pl.DataFrame) -> pl.DataFrame:
+    def _correct_pilot_episode_id(df: pl.DataFrame) -> pl.DataFrame:
         """Corrects the episode id.
 
         The pilot episode and next episode from this dataset are both S01E01.
@@ -249,3 +255,25 @@ class KaggleScriptExtractor(ScriptExtractor):
         return episode_info.join(
             script, left_on="episode_id", right_on="episode_id", how="left"
         ).select(["episode_num", "episode_title", "episode_id", "speaker", "dialogue"])
+
+    @staticmethod
+    def _correct_2_part_episodes(df: pl.LazyFrame) -> pl.LazyFrame:
+        """Corrects the episode number and ids for 2 part episodes.
+
+        Args:
+            df: The dataframe to correct.
+
+        Returns:
+            The corrected dataframe.
+        """
+
+        # Remove part numbers from episode titles (e.g. " (1)", " (2)")
+        df = df.with_columns(pl.col("episode_title").str.replace(r" \(\d+\)$", ""))
+
+        for two_part_episode in TWO_PART_EPISODES:
+            episode_id = two_part_episode["episode_id"]
+            episode_num = two_part_episode["episode_num"]
+
+            df = shift_episode_ids(df, episode_id).pipe(shift_episode_nums, episode_num)
+
+        return df

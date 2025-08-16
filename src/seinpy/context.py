@@ -84,25 +84,25 @@ class Context:
     ) -> List[Episode]:
         """Assemble the episode data."""
         if episode_nums:
-            logger.info(f"Reading episodes: {episode_nums}")
+            logger.info(f"Reading episode numbers: {episode_nums}")
             return [
                 self._get_episode(episode_num=episode_num)
                 for episode_num in episode_nums
             ]
         elif episode_titles:
-            logger.info(f"Reading episodes: {episode_titles}")
+            logger.info(f"Reading episode titles: {episode_titles}")
             return [
                 self._get_episode(episode_title=episode_title)
                 for episode_title in episode_titles
             ]
         elif seasons:
-            logger.info(f"Reading episodes: {seasons}")
+            logger.info(f"Reading seasons: {seasons}")
             episode_ids = get_episode_ids_from_seasons(seasons)
             return [
                 self._get_episode(episode_id=episode_id) for episode_id in episode_ids
             ]
         elif episode_ids:
-            logger.info(f"Reading episodes: {episode_ids}")
+            logger.info(f"Reading episode IDs: {episode_ids}")
             return [
                 self._get_episode(episode_id=episode_id) for episode_id in episode_ids
             ]
@@ -133,7 +133,7 @@ class Context:
             return self._get_episodes()
         else:
             logger.info(
-                f"Reading episodes: {episode_nums}, {episode_titles}, {episode_ids}, {seasons}"
+                f"Reading episodes:\n Num: {episode_nums}\n Title: {episode_titles}\n ID: {episode_ids}\n Seasons: {seasons}"
             )
             return self._get_episodes(
                 episode_nums=episode_nums,

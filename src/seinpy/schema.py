@@ -88,7 +88,7 @@ class Script(BaseModel):
 
 class Rating(BaseModel):
     ref: EpisodeRef
-    rating: float
+    rating: float | None = None
     num_votes: int | None = None
     link: str | None = None
 
@@ -100,6 +100,9 @@ class Rating(BaseModel):
     @field_validator("rating", mode="before")
     @classmethod
     def _validate_rating(cls, value: float) -> float:
+        if not value:
+            logger.error("No rating found")
+            return 0
         if not 0 <= value <= 100:
             raise ValueError("rating must be between 0 and 100")
         return value

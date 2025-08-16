@@ -94,12 +94,12 @@ def filter_metadata(
     Returns:
         The filtered metadata dataframe.
     """
-    
+
     if not extractor_name:
         extractor_name = "data"
-    
+
     priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
-    
+
     if priority == "episode_id":
         logger.info(f"Extracting {extractor_name} for episode_id: {episode_id}")
         df = METADATA.filter(pl.col("episode_id") == episode_id)
@@ -114,6 +114,7 @@ def filter_metadata(
 
     return df
 
+
 def get_episode_ids_from_seasons(seasons: int | List[int]) -> List[str]:
     """Get the episode ids from the seasons.
 
@@ -126,6 +127,65 @@ def get_episode_ids_from_seasons(seasons: int | List[int]) -> List[str]:
     episode_ids = []
     for season in seasons:
         df = METADATA.filter(pl.col("episode_id").str.starts_with(f"S0{season}"))
-        episode_ids.extend(df.select("episode_id").to_series().to_list())
+        episode_ids.extend(df.select("episode_id").collect().to_series().to_list())
+    logger.debug(f"Found episode IDs for seasons {seasons}: {episode_ids}")
     return episode_ids
-    
+
+
+def shift_episode_ids(df: pl.LazyFrame, from_episode_id: str) -> pl.LazyFrame:
+    """Shifts episode IDs down by one for all episodes after the given episode in the same season.
+
+    Args:
+        df: The dataframe to modify
+        from_episode_id: Episode ID in format 'SxxExx' from which to start shifting
+
+    Returns:
+        The dataframe with shifted episode IDs
+    """
+    season = int(from_episode_id[1:3])
+    episode = int(from_episode_id[4:6])
+
+    # episodes to shift
+    season_match = pl.col("episode_id").str.slice(1, 2).cast(pl.UInt32) == season
+    episode_match = pl.col("episode_id").str.slice(4, 2).cast(pl.UInt32) > episode
+
+    # Create new episode ID by decrementing episode number by 1
+    new_episode_id = pl.concat_str(
+        [
+            pl.lit("S"),
+            pl.col("episode_id").str.slice(1, 2).str.zfill(2),
+            pl.lit("E"),
+            (pl.col("episode_id").str.slice(4, 2).cast(pl.UInt32) - 1)
+            .cast(pl.Utf8)
+            .str.zfill(2),
+        ]
+    )
+
+    return df.with_columns(
+        pl.when(season_match & episode_match)
+        .then(new_episode_id)
+        .otherwise(pl.col("episode_id"))
+        .alias("episode_id")
+    )
+
+
+def shift_episode_nums(df: pl.LazyFrame, from_episode_num: str) -> pl.LazyFrame:
+    """Shifts all episode numbers down by one for all episodes after the given episode.
+
+    Args:
+        df: The dataframe to modify
+        from_episode_num: Episode number from which to start shifting
+
+    Returns:
+        The dataframe with shifted episode numbers
+    """
+
+    slice = pl.col("episode_num") > from_episode_num
+    new_episode_num = pl.col("episode_num") - 1
+
+    return df.with_columns(
+        pl.when(slice)
+        .then(new_episode_num)
+        .otherwise(pl.col("episode_num"))
+        .alias("episode_num")
+    )
