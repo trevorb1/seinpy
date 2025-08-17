@@ -30,25 +30,6 @@ def get_omdb_api_key(key: str | None = None) -> str:
     return key
 
 
-def validate_episode_parameters(
-    episode_id: Optional[str] = None,
-    episode_num: Optional[int] = None,
-    episode_title: Optional[str] = None,
-) -> None:
-    """Validate that at least one episode identifier is provided.
-
-    Args:
-        episode_id: The id of the episode to extract.
-        episode_num: The number of the episode to extract.
-        episode_title: The title of the episode to extract.
-
-    Raises:
-        ValueError: If no episode identifier is provided.
-    """
-    if not any([episode_id, episode_num, episode_title]):
-        raise ValueError("No episode id, number, or title provided")
-
-
 def get_episode_filter_priority(
     episode_id: Optional[str] = None,
     episode_num: Optional[int] = None,
@@ -81,18 +62,22 @@ def filter_metadata(
     episode_num: int | None = None,
     episode_title: str | None = None,
     extractor_name: str | None = None,
-) -> pl.DataFrame:
+    metadata: pl.LazyFrame = METADATA,
+) -> pl.LazyFrame:
     """Filter the metadata dataframe based on the episode identifier.
 
     Args:
-        priority: The priority of the episode identifier.
         episode_id: The id of the episode to extract.
         episode_num: The number of the episode to extract.
         episode_title: The title of the episode to extract.
         extractor_name: The name of the extractor.
+        metadata: The metadata dataframe to filter.
 
     Returns:
         The filtered metadata dataframe.
+
+    Raises:
+        ValueError: If no episode_id, episode_num, or episode_title is provided.
     """
 
     if not extractor_name:
@@ -102,31 +87,37 @@ def filter_metadata(
 
     if priority == "episode_id":
         logger.info(f"Extracting {extractor_name} for episode_id: {episode_id}")
-        df = METADATA.filter(pl.col("episode_id") == episode_id)
+        df = metadata.filter(pl.col("episode_id") == episode_id)
     elif priority == "episode_num":
         logger.info(f"Extracting {extractor_name} for episode_num: {episode_num}")
-        df = METADATA.filter(pl.col("episode_num") == episode_num)
+        df = metadata.filter(pl.col("episode_num") == episode_num)
     elif priority == "episode_title":
         logger.info(f"Extracting {extractor_name} for episode_title: {episode_title}")
-        df = METADATA.filter(pl.col("episode_title") == episode_title)
+        df = metadata.filter(pl.col("episode_title") == episode_title)
     else:
         raise ValueError("No episode_id, episode_num, or episode_title provided")
 
     return df
 
 
-def get_episode_ids_from_seasons(seasons: int | List[int]) -> List[str]:
+def get_episode_ids_from_seasons(
+    seasons: int | List[int], metadata: pl.LazyFrame = METADATA
+) -> List[str]:
     """Get the episode ids from the seasons.
 
     Args:
         seasons: The seasons to get the episode ids from.
+        metadata: The metadata dataframe to use.
 
     Returns:
         The episode ids.
     """
+    if isinstance(seasons, int):
+        seasons = [seasons]
+
     episode_ids = []
     for season in seasons:
-        df = METADATA.filter(pl.col("episode_id").str.starts_with(f"S0{season}"))
+        df = metadata.filter(pl.col("episode_id").str.starts_with(f"S0{season}"))
         episode_ids.extend(df.select("episode_id").collect().to_series().to_list())
     logger.debug(f"Found episode IDs for seasons {seasons}: {episode_ids}")
     return episode_ids
