@@ -105,7 +105,7 @@ class Rating(BaseModel):
             return 0
         if not 0 <= value <= 100:
             raise ValueError("rating must be between 0 and 100")
-        return value
+        return round(value, 2)
 
     @field_validator("link", mode="before")
     @classmethod
