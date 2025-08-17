@@ -17,7 +17,7 @@ class TestContext:
         ref=EpisodeRef(
             episode_id="S01E01",
             episode_num=1,
-            episode_title="Good News, Bad News",
+            episode_title="Episode 1",
         ),
         script_lines=[
             ScriptLine(speaker="Jerry", dialogue="Jerry: Hi, I'm Jerry."),
@@ -31,7 +31,7 @@ class TestContext:
         ref=EpisodeRef(
             episode_id="S01E01",
             episode_num=1,
-            episode_title="Good News, Bad News",
+            episode_title="Episode 1",
         ),
         description="This is the pilot episode of Seinfeld.",
         date="1989-07-05",
@@ -49,7 +49,7 @@ class TestContext:
         ref=EpisodeRef(
             episode_id="S01E01",
             episode_num=1,
-            episode_title="Good News, Bad News",
+            episode_title="Episode 1",
         ),
         rating=10,
         num_votes=100,
@@ -89,11 +89,11 @@ class TestContext:
 
     def test_get_episodes_by_titles(self, context):
         actual = context._get_episodes(
-            episode_titles=["Good News, Bad News", "Good News, Bad News"]
+            episode_titles=["Episode 1", "Episode 1"]
         )
         expected = [
-            context._get_episode(episode_title="Good News, Bad News"),
-            context._get_episode(episode_title="Good News, Bad News"),
+            context._get_episode(episode_title="Episode 1"),
+            context._get_episode(episode_title="Episode 1"),
         ]
         assert actual == expected
 
@@ -129,7 +129,7 @@ class TestContext:
 
     @pytest.mark.parametrize(
         "episode_titles",
-        ["Good News, Bad News", ["Good News, Bad News"]],
+        ["Episode 1", ["Episode 1"]],
     )
     def test_read_by_title(self, context, metadata, episode_titles):
         actual = context.read(episode_titles=episode_titles, metadata=metadata)

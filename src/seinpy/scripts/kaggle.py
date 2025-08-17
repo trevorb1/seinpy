@@ -109,7 +109,7 @@ class KaggleScriptExtractor(ScriptExtractor):
             raise ValueError("No episode_id, episode_num, or episode_title provided")
 
         # Check that we only have one episode
-        if not self._is_unique_counts(df):
+        if not self._is_one_episode(df):
             raise ValueError(
                 f"Multiple episodes found with: \n"
                 f"episode_id: {episode_id} \n"

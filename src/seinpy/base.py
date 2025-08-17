@@ -75,6 +75,7 @@ class ScriptExtractor(ABC):
 
         This function will convert the episode_id column to a new episode_number col.
         The episode_id is in the format "S01E04", so the function will return 4.
+        If the episode_num column already exists, it will be dropped and replaced.
         """
         ranked = (
             df.select("episode_id")
@@ -82,15 +83,27 @@ class ScriptExtractor(ABC):
             .sort("episode_id")
             .with_row_index(name="episode_num", offset=1)
         )
-        return df.drop("episode_num").join(ranked, on="episode_id", how="left")
+        if "episode_num" in df.collect_schema().names():
+            return df.drop("episode_num").join(ranked, on="episode_id", how="left")
+        else:
+            return df.join(ranked, on="episode_id", how="left")
 
     @staticmethod
-    def _is_unique_counts(df: pl.LazyFrame) -> bool:
-        """Check that the episode identifiers are unique.
+    def _is_one_episode(df: pl.LazyFrame) -> bool:
+        """Check that only one episode is found.
 
         Args:
             df: The dataframe to check.
         """
+        cols = df.collect_schema().names()
+        if not all(
+            col in cols for col in ["episode_id", "episode_num", "episode_title"]
+        ):
+            logger.error(
+                f"Missing columns. Expected: ['episode_id', 'episode_num', 'episode_title'] and found: {cols}"
+            )
+            return False
+
         unique_counts = df.select(
             [
                 pl.col("episode_id").n_unique(),
@@ -113,7 +126,7 @@ class ScriptExtractor(ABC):
             df: The dataframe to coordinate.
         """
         if not all(
-            col in df.columns
+            col in df.collect_schema().names()
             for col in [
                 "episode_num",
                 "episode_title",

@@ -4,9 +4,7 @@ from seinpy.schema import ScriptLine, Actor, EpisodeRef, Script, Rating, Credit,
 
 @pytest.fixture
 def episode_ref():
-    return EpisodeRef(
-        episode_id="S01E01", episode_num=1, episode_title="Good News, Bad News"
-    )
+    return EpisodeRef(episode_id="S01E01", episode_num=1, episode_title="Episode 1")
 
 
 class TestScriptLine:
@@ -40,17 +38,17 @@ class TestActor:
 class TestEpisodeRef:
     def test_equality(self):
         episode_ref = EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="Good News, Bad News"
+            episode_id="S01E01", episode_num=1, episode_title="Episode 1"
         )
         assert episode_ref == episode_ref
         assert episode_ref != EpisodeRef(
-            episode_id="S01E02", episode_num=1, episode_title="Good News, Bad News"
+            episode_id="S01E02", episode_num=1, episode_title="Episode 1"
         )
         assert episode_ref != EpisodeRef(
-            episode_id="S01E01", episode_num=2, episode_title="Good News, Bad News"
+            episode_id="S01E01", episode_num=2, episode_title="Episode 1"
         )
         assert episode_ref != EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="Good News, Bad News 2"
+            episode_id="S01E01", episode_num=1, episode_title="Episode 2"
         )
         assert episode_ref != EpisodeRef(
             episode_id="S01E01", episode_num=1, episode_title=None
@@ -58,38 +56,32 @@ class TestEpisodeRef:
 
     def test_true_false(self):
         episode_ref = EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="Good News, Bad News"
+            episode_id="S01E01", episode_num=1, episode_title="Episode 1"
         )
         assert bool(episode_ref)
 
     def test_episode_title_validation(self, episode_ref):
-        assert episode_ref.episode_title == "Good News, Bad News."
+        assert episode_ref.episode_title == "Episode 1."
 
     def test_episode_title_validation_with_spaces(self):
         ref = EpisodeRef(
             episode_id="S01E01",
             episode_num=1,
-            episode_title="  good   news,   bad   news  ",
+            episode_title="  episode   number,   one   (1)  ",
         )
-        assert ref.episode_title == "Good News, Bad News."
+        assert ref.episode_title == "Episode Number, One (1)."
 
     def test_episode_title_validation_with_period(self):
-        ref = EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="good news, bad news."
-        )
-        assert ref.episode_title == "Good News, Bad News."
+        ref = EpisodeRef(episode_id="S01E01", episode_num=1, episode_title="Episode 1.")
+        assert ref.episode_title == "Episode 1."
 
     def test_episode_title_validation_with_exclamation(self):
-        ref = EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="good news, bad news!"
-        )
-        assert ref.episode_title == "Good News, Bad News!"
+        ref = EpisodeRef(episode_id="S01E01", episode_num=1, episode_title="Episode 1!")
+        assert ref.episode_title == "Episode 1!"
 
     def test_episode_title_validation_with_question(self):
-        ref = EpisodeRef(
-            episode_id="S01E01", episode_num=1, episode_title="good news, bad news?"
-        )
-        assert ref.episode_title == "Good News, Bad News?"
+        ref = EpisodeRef(episode_id="S01E01", episode_num=1, episode_title="Episode 1?")
+        assert ref.episode_title == "Episode 1?"
 
     def test_episode_title_validation_none(self):
         ref = EpisodeRef(episode_id="S01E01", episode_num=1, episode_title=None)

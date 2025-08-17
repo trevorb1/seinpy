@@ -10,11 +10,11 @@ def metadata() -> pl.LazyFrame:
     return pl.LazyFrame(
         {
             "episode_title": [
-                "Good News, Bad News",
-                "The Stakeout",
-                "The Robbery",
-                "The Fix-Up",
-                "The Boyfriend",
+                "Episode 1",
+                "Episode 2",
+                "Episode 3",
+                "Episode 33",
+                "Episode 34",
             ],
             "episode_id": ["S01E01", "S01E02", "S01E03", "S03E16", "S03E17"],
             "episode_num": [1, 2, 3, 33, 34],
@@ -29,15 +29,32 @@ def episode_reference() -> pl.LazyFrame:
     return pl.LazyFrame(
         {
             "episode_title": [
-                "Good News, Bad News",
-                "The Stakeout",
-                "The Robbery",
-                "The Fix-Up",
-                "The Boyfriend",
+                "Episode 1",
+                "Episode 2",
+                "Episode 3",
+                "Episode 33",
+                "Episode 34",
             ],
             "episode_id": ["S01E01", "S01E02", "S01E03", "S03E16", "S03E17"],
             "episode_num": [1, 2, 3, 33, 34],
         }
+    )
+
+
+@fixture
+def script():
+    return Script(
+        ref=EpisodeRef(
+            episode_id="S01E01",
+            episode_num=1,
+            episode_title="Episode 1",
+        ),
+        script_lines=[
+            ScriptLine(speaker="Jerry", dialogue="Hi, I'm Jerry."),
+            ScriptLine(speaker="George", dialogue="Hi, I'm George."),
+            ScriptLine(speaker="Kramer", dialogue="Hi, I'm Kramer."),
+            ScriptLine(speaker="Elaine", dialogue="Hi, I'm Elaine."),
+        ],
     )
 
 
@@ -54,7 +71,7 @@ class DummyScriptExtractor(ScriptExtractor):
                 {
                     "episode_id": ["S01E01"] * 4,
                     "episode_num": [1] * 4,
-                    "episode_title": ["Good News, Bad News"] * 4,
+                    "episode_title": ["Episode 1"] * 4,
                     "speaker": ["Jerry", "George", "Kramer", "Elaine"],
                     "dialogue": [
                         "Jerry: Hi, I'm Jerry.",
@@ -68,7 +85,7 @@ class DummyScriptExtractor(ScriptExtractor):
             ref=EpisodeRef(
                 episode_id="S01E01",
                 episode_num=1,
-                episode_title="Good News, Bad News",
+                episode_title="Episode 1",
             ),
             script_lines=[
                 ScriptLine(speaker="Jerry", dialogue="Jerry: Hi, I'm Jerry."),
@@ -92,7 +109,7 @@ class DummyCreditExtractor(CreditExtractor):
                 {
                     "episode_id": ["S01E01"],
                     "episode_num": [1],
-                    "episode_title": ["Good News, Bad News"],
+                    "episode_title": ["Episode 1"],
                     "description": ["This is the pilot episode of Seinfeld."],
                     "date": ["1989-07-05"],
                     "writer": ["Jerry Seinfeld;Larry David"],
@@ -106,7 +123,7 @@ class DummyCreditExtractor(CreditExtractor):
             ref=EpisodeRef(
                 episode_id="S01E01",
                 episode_num=1,
-                episode_title="Good News, Bad News",
+                episode_title="Episode 1",
             ),
             description="This is the pilot episode of Seinfeld.",
             date="1989-07-05",
@@ -134,7 +151,7 @@ class DummyRatingExtractor(RatingExtractor):
                 {
                     "episode_id": ["S01E01"],
                     "episode_num": [1],
-                    "episode_title": ["Good News, Bad News"],
+                    "episode_title": ["Episode 1"],
                     "rating": 10,
                     "num_votes": 100,
                     "link": "https://www.imdb.com/",
@@ -144,7 +161,7 @@ class DummyRatingExtractor(RatingExtractor):
             ref=EpisodeRef(
                 episode_id="S01E01",
                 episode_num=1,
-                episode_title="Good News, Bad News",
+                episode_title="Episode 1",
             ),
             rating=10,
             num_votes=100,

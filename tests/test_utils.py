@@ -47,7 +47,7 @@ class TestFilterMetadata:
         actual = filter_metadata(episode_id="S01E01", metadata=metadata)
         expected = pl.LazyFrame(
             {
-                "episode_title": ["Good News, Bad News"],
+                "episode_title": ["Episode 1"],
                 "episode_id": ["S01E01"],
                 "episode_num": [1],
                 "imdb": ["tt0098286"],
@@ -59,7 +59,7 @@ class TestFilterMetadata:
         actual = filter_metadata(episode_num=1, metadata=metadata)
         expected = pl.LazyFrame(
             {
-                "episode_title": ["Good News, Bad News"],
+                "episode_title": ["Episode 1"],
                 "episode_id": ["S01E01"],
                 "episode_num": [1],
                 "imdb": ["tt0098286"],
@@ -68,10 +68,10 @@ class TestFilterMetadata:
         assert_frame_equal(actual, expected)
 
     def test_filter_metadata_episode_title(self, metadata):
-        actual = filter_metadata(episode_title="The Stakeout", metadata=metadata)
+        actual = filter_metadata(episode_title="Episode 2", metadata=metadata)
         expected = pl.LazyFrame(
             {
-                "episode_title": ["The Stakeout"],
+                "episode_title": ["Episode 2"],
                 "episode_id": ["S01E02"],
                 "episode_num": [2],
                 "imdb": ["tt0697784"],
@@ -107,11 +107,11 @@ class TestShiftEpisodeIds:
         expected = pl.LazyFrame(
             {
                 "episode_title": [
-                    "Good News, Bad News",
-                    "The Stakeout",
-                    "The Robbery",
-                    "The Fix-Up",
-                    "The Boyfriend",
+                    "Episode 1",
+                    "Episode 2",
+                    "Episode 3",
+                    "Episode 33",
+                    "Episode 34",
                 ],
                 "episode_id": ["S01E01", "S01E02", "S01E02", "S03E16", "S03E17"],
                 "episode_num": [1, 2, 3, 33, 34],
@@ -131,11 +131,11 @@ class TestShiftEpisodeNums:
         expected = pl.LazyFrame(
             {
                 "episode_title": [
-                    "Good News, Bad News",
-                    "The Stakeout",
-                    "The Robbery",
-                    "The Fix-Up",
-                    "The Boyfriend",
+                    "Episode 1",
+                    "Episode 2",
+                    "Episode 3",
+                    "Episode 33",
+                    "Episode 34",
                 ],
                 "episode_id": ["S01E01", "S01E02", "S01E03", "S03E16", "S03E17"],
                 "episode_num": [1, 2, 2, 32, 33],
@@ -148,11 +148,11 @@ class TestShiftEpisodeNums:
         expected = pl.LazyFrame(
             {
                 "episode_title": [
-                    "Good News, Bad News",
-                    "The Stakeout",
-                    "The Robbery",
-                    "The Fix-Up",
-                    "The Boyfriend",
+                    "Episode 1",
+                    "Episode 2",
+                    "Episode 3",
+                    "Episode 33",
+                    "Episode 34",
                 ],
                 "episode_id": ["S01E01", "S01E02", "S01E03", "S03E16", "S03E17"],
                 "episode_num": [1, 2, 3, 32, 33],
