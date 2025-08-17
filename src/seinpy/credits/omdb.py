@@ -38,7 +38,7 @@ class OMDBCreditExtractor(CreditExtractor):
         """Extract the credits for the given episode."""
         data = self.extract_credits(episode_id, episode_num, episode_title)
         if as_df:
-            return data
+            return data.collect()
         return self._df_to_credits(data)
 
     def extract_credits(
@@ -79,4 +79,3 @@ class OMDBCreditExtractor(CreditExtractor):
         }
 
         return pl.LazyFrame(data)
-

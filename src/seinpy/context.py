@@ -1,5 +1,7 @@
 from __future__ import annotations
 from typing import List
+import polars as pl
+from seinpy.constants import METADATA
 from seinpy.schema import Episode
 from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor
 from seinpy.base import Writer
@@ -70,6 +72,8 @@ class Context:
         episode_id: str | None = None,
     ) -> Episode:
         """Assemble the episode data."""
+        if not any([episode_id, episode_num, episode_title]):
+            raise ValueError("No episode number, title, or ID provided")
         script = self._script_extractor.extract(episode_id, episode_num, episode_title)
         credit = self._credit_extractor.extract(episode_id, episode_num, episode_title)
         rating = self._rating_extractor.extract(episode_id, episode_num, episode_title)
@@ -81,6 +85,7 @@ class Context:
         episode_titles: str | List[str] | None = None,
         episode_ids: str | List[str] | None = None,
         seasons: int | List[int] | None = None,
+        metadata: pl.LazyFrame = METADATA,
     ) -> List[Episode]:
         """Assemble the episode data."""
         if episode_nums:
@@ -97,7 +102,7 @@ class Context:
             ]
         elif seasons:
             logger.info(f"Reading seasons: {seasons}")
-            episode_ids = get_episode_ids_from_seasons(seasons)
+            episode_ids = get_episode_ids_from_seasons(seasons, metadata)
             return [
                 self._get_episode(episode_id=episode_id) for episode_id in episode_ids
             ]
@@ -116,6 +121,7 @@ class Context:
         episode_ids: str | List[str] | None = None,
         seasons: int | List[int] | None = None,
         get_all: bool = False,
+        metadata: pl.LazyFrame = METADATA,
     ) -> List[Episode]:
         """Read the data from the file."""
 
@@ -128,9 +134,22 @@ class Context:
         if isinstance(seasons, int):
             seasons = [seasons]
 
+        if (
+            not any([episode_nums, episode_titles, episode_ids, seasons])
+            and not get_all
+        ):
+            raise ValueError("No episode number, title, ID, or season provided")
+
         if get_all:
             logger.info("Reading all episodes")
-            return self._get_episodes()
+            ids = (
+                metadata.select(pl.col("episode_id"))
+                .unique()
+                .collect()
+                .to_series()
+                .to_list()
+            )
+            return self._get_episodes(episode_ids=ids, metadata=metadata)
         else:
             logger.info(
                 f"Reading episodes:\n Num: {episode_nums}\n Title: {episode_titles}\n ID: {episode_ids}\n Seasons: {seasons}"
@@ -140,6 +159,7 @@ class Context:
                 episode_titles=episode_titles,
                 episode_ids=episode_ids,
                 seasons=seasons,
+                metadata=metadata,
             )
 
     def read_and_write(self) -> None:

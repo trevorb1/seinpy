@@ -225,7 +225,9 @@ class CreditExtractor(ABC):
 
         df = df.collect()  # materialize the dataframe once
 
-        actors = [Actor(name=actor) for actor in df.select("actors").item().split(",")]
+        actors = [
+            Actor(name=actor) for actor in df.select("actors").item().split(";").strip()
+        ]
 
         return Credit(
             ref=EpisodeRef(
