@@ -190,15 +190,29 @@ class RatingExtractor(ABC):
         episode_id = df.select("episode_id").unique().item()
         episode_num = df.select("episode_num").unique().item()
         episode_title = df.select("episode_title").unique().item()
-        rating = df.select("rating").unique().item()
-        num_votes = df.select("num_votes").unique().item()
-        link = df.select("link").unique().item()
+
+        try:
+            rating = float(df.select("rating").unique().item())
+        except pl.exceptions.ColumnNotFoundError:
+            rating = None
+
+        try:
+            num_votes = int(df.select("num_votes").unique().item())
+        except pl.exceptions.ColumnNotFoundError:
+            num_votes = None
+
+        try:
+            link = df.select("link").unique().item()
+        except pl.exceptions.ColumnNotFoundError:
+            link = None
+
         logger.debug(f"Rating: {rating}")
         logger.debug(f"Num Votes: {num_votes}")
         logger.debug(f"Link: {link}")
         logger.debug(f"Episode ID: {episode_id}")
         logger.debug(f"Episode Num: {episode_num}")
         logger.debug(f"Episode Title: {episode_title}")
+
         return Rating(
             ref=EpisodeRef(
                 episode_id=episode_id,

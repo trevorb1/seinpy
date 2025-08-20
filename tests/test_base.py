@@ -2,7 +2,7 @@ import pytest
 import polars as pl
 from polars.testing import assert_frame_equal
 
-from seinpy.schema import Actor, Credit, Director, EpisodeRef, Writer
+from seinpy.schema import Actor, Credit, Director, EpisodeRef, Rating, Writer
 
 
 class TestScriptExtractor:
@@ -192,5 +192,83 @@ class TestCreditExtractor:
             directors=[],
             description="",
             actors=[],
+        )
+        assert actual == expected
+
+
+class TestRatingExtractor:
+    def test_df_to_rating_basic(self, dummy_rating_extractor):
+        extractor = dummy_rating_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01"],
+                "episode_num": [1],
+                "episode_title": ["Episode 1"],
+                "rating": [10],
+                "num_votes": [100],
+                "link": ["https://example.com"],
+            }
+        )
+        actual = extractor._df_to_rating(df)
+        expected = Rating(
+            ref=EpisodeRef(
+                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+            ),
+            rating=10,
+            num_votes=100,
+            link="https://example.com",
+        )
+        assert actual == expected
+
+    def test_df_to_rating_missing_columns(self, dummy_rating_extractor):
+        extractor = dummy_rating_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01"],
+                "episode_num": [1],
+                "episode_title": ["Episode 1"],
+            }
+        )
+        actual = extractor._df_to_rating(df)
+        expected = Rating(
+            ref=EpisodeRef(
+                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+            ),
+            rating=None,
+            num_votes=None,
+            link=None,
+        )
+        assert actual == expected
+
+    def test_df_to_rating_multiple_episodes(self, dummy_rating_extractor):
+        extractor = dummy_rating_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01", "S01E02"],
+            }
+        )
+        with pytest.raises(ValueError):
+            extractor._df_to_rating(df)
+
+    def test_df_to_rating_wrong_dtype(self, dummy_rating_extractor):
+        extractor = dummy_rating_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01"],
+                "episode_num": [1],
+                "episode_title": ["Episode 1"],
+                "rating": ["10"],
+                "num_votes": ["100"],
+                "link": ["https://example.com"],
+            }
+        )
+        actual = extractor._df_to_rating(df)
+        expected = Rating(
+            ref=EpisodeRef(
+                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+            ),
+            rating=10.0,
+            num_votes=100,
+            link="https://example.com",
         )
         assert actual == expected
