@@ -6,7 +6,17 @@ from abc import ABC, abstractmethod
 from typing import List, Union
 import polars as pl
 import logging
-from seinpy.schema import Actor, Episode, EpisodeRef, Script, Rating, Credit, ScriptLine
+from seinpy.schema import (
+    Actor,
+    Director,
+    Episode,
+    EpisodeRef,
+    Script,
+    Rating,
+    Credit,
+    ScriptLine,
+    Writer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -238,9 +248,52 @@ class CreditExtractor(ABC):
 
         df = df.collect()  # materialize the dataframe once
 
-        actors = [
-            Actor(name=actor) for actor in df.select("actors").item().split(";").strip()
-        ]
+        if len(df) > 1:
+            raise ValueError("Multiple episodes found")
+
+        try:
+            actor_plus_roles = [
+                x.strip() for x in df.select("actors").item().split(";")
+            ]
+
+            actors = []
+            for actor_plus_role in actor_plus_roles:
+                actor = actor_plus_role.split("|")
+                if len(actor) == 2:
+                    actors.append(Actor(name=actor[0], role=actor[1]))
+                else:
+                    actors.append(Actor(name=actor[0]))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No actors found")
+            actors = []
+
+        try:
+            writers = []
+            for writer in df.select("writer").item().split(";"):
+                writers.append(Writer(name=writer))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No writers found")
+            writers = []
+
+        try:
+            directors = []
+            for director in df.select("director").item().split(";"):
+                directors.append(Director(name=director))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No directors found")
+            directors = []
+
+        try:
+            date = df.select("date").item()
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No date found")
+            date = ""
+
+        try:
+            description = df.select("description").item()
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No description found")
+            description = ""
 
         return Credit(
             ref=EpisodeRef(
@@ -248,19 +301,19 @@ class CreditExtractor(ABC):
                 episode_num=df.select("episode_num").item(),
                 episode_title=df.select("episode_title").item(),
             ),
-            description=df.select("description").item(),
-            date=df.select("date").item(),
-            writer=df.select("writer").item().split(","),
-            director=df.select("director").item().split(","),
+            description=description,
+            date=date,
+            writers=writers,
+            directors=directors,
             actors=actors,
         )
 
 
-class Writer(ABC):
+class Exporter(ABC):
     """Base strategy class for all writers."""
 
     @abstractmethod
-    def write(
+    def export(
         self,
         data: Union[List[Episode], List[Script], List[Rating], List[Credit]],
     ) -> None:

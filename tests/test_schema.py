@@ -1,10 +1,25 @@
 import pytest
-from seinpy.schema import ScriptLine, Actor, EpisodeRef, Script, Rating, Credit, Episode
+from seinpy.schema import (
+    ScriptLine,
+    Actor,
+    EpisodeRef,
+    Script,
+    Rating,
+    Credit,
+    Episode,
+    capitalize_name,
+)
 
 
 @pytest.fixture
 def episode_ref():
     return EpisodeRef(episode_id="S01E01", episode_num=1, episode_title="Episode 1")
+
+
+def test_capitalize_name():
+    assert capitalize_name("jerry") == "Jerry"
+    assert capitalize_name("  jerry  ") == "Jerry"
+    assert capitalize_name("jerry seinfeld") == "Jerry Seinfeld"
 
 
 class TestScriptLine:

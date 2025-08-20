@@ -2,6 +2,8 @@ import pytest
 import polars as pl
 from polars.testing import assert_frame_equal
 
+from seinpy.schema import Actor, Credit, Director, EpisodeRef, Writer
+
 
 class TestScriptExtractor:
     def test_df_to_script(self, dummy_script_extractor, script):
@@ -124,3 +126,71 @@ class TestScriptExtractor:
             }
         )
         assert_frame_equal(actual, expected)
+
+
+class TestCreditExtractor:
+    def test_df_to_credit_basic(self, dummy_credit_extractor):
+        extractor = dummy_credit_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01"],
+                "episode_num": [1],
+                "episode_title": ["Episode 1"],
+                "description": ["Description of Episode 1"],
+                "date": ["2025-01-01"],
+                "writer": ["Jerry Seinfeld;Larry David"],
+                "director": ["Jerry Seinfeld;Larry David"],
+                "actors": [
+                    "Jerry Seinfeld|Jerry;Jason Alexander|George;Michael Richards|Kramer;Julia Louis-Dreyfus|Elaine"
+                ],
+            }
+        )
+        actual = extractor._df_to_credits(df)
+        expected = Credit(
+            ref=EpisodeRef(
+                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+            ),
+            date="2025-01-01",
+            writers=[Writer(name="Jerry Seinfeld"), Writer(name="Larry David")],
+            directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
+            description="Description of Episode 1",
+            actors=[
+                Actor(name="Jerry Seinfeld", role="Jerry"),
+                Actor(name="Jason Alexander", role="George"),
+                Actor(name="Michael Richards", role="Kramer"),
+                Actor(name="Julia Louis-Dreyfus", role="Elaine"),
+            ],
+        )
+        assert actual == expected
+
+    def test_df_to_credit_multiple_episodes(self, dummy_credit_extractor):
+        extractor = dummy_credit_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01", "S01E02"],
+            }
+        )
+        with pytest.raises(ValueError):
+            extractor._df_to_credits(df)
+
+    def test_df_to_credit_missing_columns(self, dummy_credit_extractor):
+        extractor = dummy_credit_extractor
+        df = pl.LazyFrame(
+            {
+                "episode_id": ["S01E01"],
+                "episode_num": [1],
+                "episode_title": ["Episode 1"],
+            }
+        )
+        actual = extractor._df_to_credits(df)
+        expected = Credit(
+            ref=EpisodeRef(
+                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+            ),
+            date="",
+            writers=[],
+            directors=[],
+            description="",
+            actors=[],
+        )
+        assert actual == expected

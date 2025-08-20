@@ -9,13 +9,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def capitalize_name(value: str) -> str:
+    """Capitalize and clean name."""
+    return value.strip().title()
+
+
 class ScriptLine(BaseModel):
     speaker: str
     dialogue: str
 
     @field_validator("speaker", mode="after")
     def _capitalize(cls, value: str) -> str:
-        return value.strip().title()
+        return capitalize_name(value)
 
 
 class Actor(BaseModel):
@@ -24,7 +29,23 @@ class Actor(BaseModel):
 
     @field_validator("name", "role", mode="after")
     def _capitalize(cls, value: str) -> str:
-        return value.strip().title()
+        return capitalize_name(value)
+
+
+class Writer(BaseModel):
+    name: str
+
+    @field_validator("name", mode="after")
+    def _capitalize(cls, value: str) -> str:
+        return capitalize_name(value)
+
+
+class Director(BaseModel):
+    name: str
+
+    @field_validator("name", mode="after")
+    def _capitalize(cls, value: str) -> str:
+        return capitalize_name(value)
 
 
 class EpisodeRef(BaseModel):
@@ -121,13 +142,9 @@ class Credit(BaseModel):
     ref: EpisodeRef
     description: Optional[str] = None
     date: Optional[str] = None
-    writer: Optional[List[str]] = None
-    director: Optional[List[str]] = None
+    writers: Optional[List[Writer]] = None
+    directors: Optional[List[Director]] = None
     actors: Optional[List[Actor]] = None
-
-    @field_validator("writer", "director", mode="after")
-    def _capitalize(cls, values: List[str]) -> List[str]:
-        return [x.strip().title() for x in values]
 
 
 class Episode(BaseModel):

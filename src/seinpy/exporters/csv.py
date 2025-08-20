@@ -1,13 +1,13 @@
-"""Json writer."""
+"""Csv writer."""
 
 from typing import List
 
-from seinpy.main import Writer
+from seinpy.base import Exporter
 from seinpy.schema import Episode
 
 
-class JsonWriter(Writer):
-    """Write the data to a json file."""
+class CsvExporter(Exporter):
+    """Write the data to a csv file."""
 
     def write(self, data: List[Episode], save_path: str) -> None:
         raise NotImplementedError
