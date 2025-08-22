@@ -182,3 +182,33 @@ def dummy_credit_extractor() -> CreditExtractor:
 @fixture
 def dummy_rating_extractor() -> RatingExtractor:
     return DummyRatingExtractor()
+
+
+@fixture
+def fake_omdb_response() -> dict:
+    return {
+            "Title": "Episode 2",
+            "Year": "1990",
+            "Rated": "TV-PG",
+            "Released": "31 May 1990",
+            "Season": "1",
+            "Episode": "2",
+            "Runtime": "23 min",
+            "Genre": "Comedy",
+            "Writer": "Larry David, Jerry Seinfeld",
+            "Director": "Tom Cherones",
+            "Actors": "Jerry Seinfeld, Julia Louis-Dreyfus, Michael Richards, Jason Alexander",
+            "Plot": "Seinfeld is literally a show about nothing.",
+            "Language": "English",
+            "Country": "United States",
+            "Awards": "N/A",
+            "Poster": "https://m.media-amazon.com/images/M/MV5BNzI4OGU3ODUtYTgxNy00YzZhLWJiODMtMTYyNWNjNGM2YWUzXkEyXkFqcGdeQXVyNjAwNDUxODI@._V1_SX300.jpg",
+            "Ratings": [{"Source": "Internet Movie Database", "Value": "7.5"}],
+            "Metascore": "N/A",
+            "imdbRating": "7.5",
+            "imdbVotes": "5487",
+            "imdbID": "tt0697784",
+            "seriesID": "tt0098904",
+            "Type": "episode",
+            "Response": "True",
+        }

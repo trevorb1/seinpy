@@ -63,6 +63,13 @@ class OMDBRatingExtractor(RatingExtractor):
         else:
             raise ValueError(f"Invalid rating type: {type(rating)}")
 
+    @staticmethod
+    def _correct_episode_titles(title: str) -> str:
+        """Correct the episode titles to align with imdb."""
+        if title == "The Seinfeld Chronicles - Pilot":
+            return "Good News, Bad News"
+        return title
+
     def extract_rating(
         self,
         episode_id: str | None = None,
@@ -99,9 +106,7 @@ class OMDBRatingExtractor(RatingExtractor):
             else df.select("episode_title").collect().item()
         )
 
-        # Pilot episode has differnt name
-        if episode_title == "The Seinfeld Chronicles - Pilot":
-            episode_title = "Good News, Bad News"
+        episode_title = self._correct_episode_titles(episode_title)
 
         imdb_link = f"https://www.imdb.com/title/{imdb_id}/"
 
