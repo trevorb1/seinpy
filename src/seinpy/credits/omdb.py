@@ -71,11 +71,11 @@ class OMDBCreditExtractor(CreditExtractor):
             "episode_id": episode_id,
             "episode_num": episode_num,
             "episode_title": episode_title,
-            "description": response["Plot"],
-            "date": response["Released"],
-            "writer": response["Writer"],
-            "director": response["Director"],
-            "actors": response["Actors"],
+            "description": response["Plot"].replace(",", ";"),
+            "date": response["Released"].replace(",", ";"),
+            "writer": response["Writer"].replace(",", ";"),
+            "director": response["Director"].replace(",", ";"),
+            "actors": response["Actors"].replace(",", ";"),
         }
 
         return pl.LazyFrame(data)
