@@ -3,8 +3,7 @@ from typing import List
 import polars as pl
 from seinpy.constants import METADATA
 from seinpy.schema import Episode
-from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor
-from seinpy.base import Writer
+from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor, Exporter
 from seinpy.utils import get_episode_ids_from_seasons
 import logging
 
@@ -21,7 +20,7 @@ class Context:
         script_extractor: ScriptExtractor,
         credit_extractor: CreditExtractor,
         rating_extractor: RatingExtractor,
-        writer: Writer | None = None,
+        exporter: Exporter | None = None,
     ) -> None:
         """
         Usually, the Context accepts a strategy through the constructor, but
@@ -31,7 +30,7 @@ class Context:
         self._script_extractor = script_extractor
         self._credit_extractor = credit_extractor
         self._rating_extractor = rating_extractor
-        self._writer = writer
+        self._exporter = exporter
 
     @property
     def script_extractor(self) -> ScriptExtractor:
@@ -58,12 +57,12 @@ class Context:
         self._rating_extractor = rating_extractor
 
     @property
-    def writer(self) -> Writer:
-        return self._writer
+    def exporter(self) -> Exporter:
+        return self._exporter
 
-    @writer.setter
-    def writer(self, writer: Writer) -> None:
-        self._writer = writer
+    @exporter.setter
+    def exporter(self, exporter: Exporter) -> None:
+        self._exporter = exporter
 
     def _get_episode(
         self,

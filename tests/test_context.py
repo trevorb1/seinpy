@@ -1,5 +1,11 @@
 import pytest
-from seinpy.context import Context
+from seinpy.context import (
+    Context,
+    ScriptExtractor,
+    CreditExtractor,
+    RatingExtractor,
+    Exporter,
+)
 from seinpy.schema import (
     Director,
     Episode,
@@ -14,12 +20,49 @@ from seinpy.schema import (
 
 
 @pytest.fixture
-def context(dummy_script_extractor, dummy_credit_extractor, dummy_rating_extractor):
+def context(
+    dummy_script_extractor,
+    dummy_credit_extractor,
+    dummy_rating_extractor,
+    dummy_exporter,
+):
     return Context(
         script_extractor=dummy_script_extractor,
         credit_extractor=dummy_credit_extractor,
         rating_extractor=dummy_rating_extractor,
+        exporter=dummy_exporter,
     )
+
+
+class TestContextProperties:
+    def test_initial_properties(
+        self,
+        context,
+    ):
+        assert isinstance(context.script_extractor, ScriptExtractor)
+        assert isinstance(context.credit_extractor, CreditExtractor)
+        assert isinstance(context.rating_extractor, RatingExtractor)
+        assert isinstance(context.exporter, Exporter)
+
+    def test_set_script_extractor(self, context, dummy_script_extractor):
+        new_extractor = dummy_script_extractor
+        context.script_extractor = new_extractor
+        assert context.script_extractor is new_extractor
+
+    def test_set_credit_extractor(self, context, dummy_credit_extractor):
+        new_extractor = dummy_credit_extractor
+        context.credit_extractor = new_extractor
+        assert context.credit_extractor is new_extractor
+
+    def test_set_rating_extractor(self, context, dummy_rating_extractor):
+        new_extractor = dummy_rating_extractor
+        context.rating_extractor = new_extractor
+        assert context.rating_extractor is new_extractor
+
+    def test_set_exporter(self, context, dummy_exporter):
+        new_exporter = dummy_exporter
+        context.exporter = new_exporter
+        assert context.exporter is new_exporter
 
 
 class TestContext:
