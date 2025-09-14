@@ -1,6 +1,16 @@
 import pytest
 from seinpy.context import Context
-from seinpy.schema import Episode, Script, Credit, Rating, EpisodeRef, ScriptLine, Actor
+from seinpy.schema import (
+    Director,
+    Episode,
+    Script,
+    Credit,
+    Rating,
+    EpisodeRef,
+    ScriptLine,
+    Actor,
+    Writer,
+)
 
 
 @pytest.fixture
@@ -15,41 +25,41 @@ def context(dummy_script_extractor, dummy_credit_extractor, dummy_rating_extract
 class TestContext:
     expected_script = Script(
         ref=EpisodeRef(
-            episode_id="S01E01",
-            episode_num=1,
-            episode_title="Episode 1",
+            episode_id="S01E02",
+            episode_num=2,
+            episode_title="Episode 2",
         ),
         script_lines=[
-            ScriptLine(speaker="Jerry", dialogue="Jerry: Hi, I'm Jerry."),
-            ScriptLine(speaker="George", dialogue="George: Hi, I'm George."),
-            ScriptLine(speaker="Kramer", dialogue="Kramer: Hi, I'm Kramer."),
-            ScriptLine(speaker="Elaine", dialogue="Elaine: Hi, I'm Elaine."),
+            ScriptLine(speaker="Jerry", dialogue="Hi, I'm Jerry."),
+            ScriptLine(speaker="George", dialogue="Hi, I'm George."),
+            ScriptLine(speaker="Kramer", dialogue="Hi, I'm Kramer."),
+            ScriptLine(speaker="Elaine", dialogue="Hi, I'm Elaine."),
         ],
     )
 
     expected_credit = Credit(
         ref=EpisodeRef(
-            episode_id="S01E01",
-            episode_num=1,
-            episode_title="Episode 1",
+            episode_id="S01E02",
+            episode_num=2,
+            episode_title="Episode 2",
         ),
-        description="This is the pilot episode of Seinfeld.",
-        date="1989-07-05",
-        writer=["Jerry Seinfeld", "Larry David"],
-        director=["Jerry Seinfeld", "Larry David"],
+        description="Seinfeld is literally a show about nothing.",
+        date="2025-01-01",
+        writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
+        directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
         actors=[
             Actor(name="Jerry Seinfeld", role="Jerry"),
             Actor(name="Jason Alexander", role="George"),
-            Actor(name="Michael Richards", role="Kramer"),
             Actor(name="Julia Louis-Dreyfus", role="Elaine"),
+            Actor(name="Michael Richards", role="Kramer"),
         ],
     )
 
     expected_rating = Rating(
         ref=EpisodeRef(
-            episode_id="S01E01",
-            episode_num=1,
-            episode_title="Episode 1",
+            episode_id="S01E02",
+            episode_num=2,
+            episode_title="Episode 2",
         ),
         rating=10,
         num_votes=100,
@@ -63,7 +73,8 @@ class TestContext:
     )
 
     def test_get_episode(self, context):
-        actual = context._get_episode(episode_id="S01E01")
+        actual = context._get_episode(episode_id="S01E02")
+        print(actual)
         expected = self.expected_episode
         assert actual == expected
 
@@ -72,7 +83,7 @@ class TestContext:
             context._get_episode()
 
     def test_get_episodes_by_ids(self, context):
-        actual = context._get_episodes(episode_ids=["S01E01", "S01E01"])
+        actual = context._get_episodes(episode_ids=["S01E02", "S01E02"])
         expected = [
             self.expected_episode,
             self.expected_episode,
@@ -80,7 +91,7 @@ class TestContext:
         assert actual == expected
 
     def test_get_episodes_by_nums(self, context):
-        actual = context._get_episodes(episode_nums=[1, 1])
+        actual = context._get_episodes(episode_nums=[2, 2])
         expected = [
             self.expected_episode,
             self.expected_episode,
@@ -88,19 +99,17 @@ class TestContext:
         assert actual == expected
 
     def test_get_episodes_by_titles(self, context):
-        actual = context._get_episodes(
-            episode_titles=["Episode 1", "Episode 1"]
-        )
+        actual = context._get_episodes(episode_titles=["Episode 2", "Episode 2"])
         expected = [
-            context._get_episode(episode_title="Episode 1"),
-            context._get_episode(episode_title="Episode 1"),
+            context._get_episode(episode_title="Episode 2"),
+            context._get_episode(episode_title="Episode 2"),
         ]
         assert actual == expected
 
     def test_get_episodes_by_seasons(self, context, metadata):
         actual = context._get_episodes(seasons=[1], metadata=metadata)
         expected = [
-            context._get_episode(episode_id="S01E01"),
+            context._get_episode(episode_id="S01E02"),
         ]
         assert len(actual) == 3  # length of metadata for season 1
         assert actual[0] == expected[0]

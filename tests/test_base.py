@@ -10,9 +10,9 @@ class TestScriptExtractor:
         extractor = dummy_script_extractor
         df = pl.LazyFrame(
             {
-                "episode_id": ["S01E01"] * 4,
-                "episode_num": [1] * 4,
-                "episode_title": ["Episode 1"] * 4,
+                "episode_id": ["S01E02"] * 4,
+                "episode_num": [2] * 4,
+                "episode_title": ["Episode 2"] * 4,
                 "speaker": ["Jerry", "George", "Kramer", "Elaine"],
                 "dialogue": [
                     "Hi, I'm Jerry.",
@@ -129,36 +129,38 @@ class TestScriptExtractor:
 
 
 class TestCreditExtractor:
-    def test_df_to_credit_basic(self, dummy_credit_extractor):
+    @pytest.fixture
+    def fake_df(self) -> pl.LazyFrame:
+        data = {
+            "episode_id": ["S01E02"],
+            "episode_num": [2],
+            "episode_title": ["Episode 2"],
+            "description": ["Seinfeld is literally a show about nothing."],
+            "date": ["2025-01-01"],
+            "writer": ["Larry David;Jerry Seinfeld"],
+            "director": ["Jerry Seinfeld;Larry David"],
+            "actors": [
+                "Jerry Seinfeld|Jerry;Jason Alexander|George;Julia Louis-Dreyfus|Elaine;Michael Richards|Kramer"
+            ],
+        }
+        return pl.LazyFrame(data)
+
+    def test_df_to_credit_basic(self, dummy_credit_extractor, fake_df):
         extractor = dummy_credit_extractor
-        df = pl.LazyFrame(
-            {
-                "episode_id": ["S01E01"],
-                "episode_num": [1],
-                "episode_title": ["Episode 1"],
-                "description": ["Description of Episode 1"],
-                "date": ["2025-01-01"],
-                "writer": ["Jerry Seinfeld;Larry David"],
-                "director": ["Jerry Seinfeld;Larry David"],
-                "actors": [
-                    "Jerry Seinfeld|Jerry;Jason Alexander|George;Michael Richards|Kramer;Julia Louis-Dreyfus|Elaine"
-                ],
-            }
-        )
-        actual = extractor._df_to_credits(df)
+        actual = extractor._df_to_credits(fake_df)
         expected = Credit(
             ref=EpisodeRef(
-                episode_id="S01E01", episode_num=1, episode_title="Episode 1"
+                episode_id="S01E02", episode_num=2, episode_title="Episode 2"
             ),
             date="2025-01-01",
-            writers=[Writer(name="Jerry Seinfeld"), Writer(name="Larry David")],
+            writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
             directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
-            description="Description of Episode 1",
+            description="Seinfeld is literally a show about nothing.",
             actors=[
                 Actor(name="Jerry Seinfeld", role="Jerry"),
                 Actor(name="Jason Alexander", role="George"),
-                Actor(name="Michael Richards", role="Kramer"),
                 Actor(name="Julia Louis-Dreyfus", role="Elaine"),
+                Actor(name="Michael Richards", role="Kramer"),
             ],
         )
         assert actual == expected
@@ -192,6 +194,45 @@ class TestCreditExtractor:
             directors=[],
             description="",
             actors=[],
+        )
+        assert actual == expected
+
+    def test_extract_to_df(self, dummy_credit_extractor, monkeypatch, fake_df):
+        # Mock the extract_credits function
+        monkeypatch.setattr(
+            "seinpy.base.CreditExtractor.extract_credit",
+            lambda *a, **k: fake_df,
+        )
+
+        extractor = dummy_credit_extractor
+        actual = extractor.extract(episode_id="S01E02", as_df=True)
+        expected = fake_df.collect()
+        assert_frame_equal(actual, expected)
+
+    def test_extract_to_credit(self, dummy_credit_extractor, monkeypatch, fake_df):
+        # Mock the extract_credits function
+        monkeypatch.setattr(
+            "seinpy.base.CreditExtractor.extract_credit",
+            lambda *a, **k: fake_df,
+        )
+        extractor = dummy_credit_extractor
+        actual = extractor.extract(episode_id="S01E02", as_df=False)
+        expected = Credit(
+            ref=EpisodeRef(
+                episode_id="S01E02",
+                episode_num=2,
+                episode_title="Episode 2",
+            ),
+            description="Seinfeld is literally a show about nothing.",
+            date="2025-01-01",
+            writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
+            directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
+            actors=[
+                Actor(name="Jerry Seinfeld", role="Jerry"),
+                Actor(name="Jason Alexander", role="George"),
+                Actor(name="Julia Louis-Dreyfus", role="Elaine"),
+                Actor(name="Michael Richards", role="Kramer"),
+            ],
         )
         assert actual == expected
 

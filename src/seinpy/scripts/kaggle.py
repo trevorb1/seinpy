@@ -30,18 +30,6 @@ class KaggleScriptExtractor(ScriptExtractor):
         self.data = self._get_raw_data()
         logger.info("Loaded Kaggle Seinfeld episodes")
 
-    def extract(
-        self,
-        episode_id: str | None = None,
-        episode_num: int | None = None,
-        episode_title: str | None = None,
-        as_df: bool = False,
-    ) -> Script | pl.DataFrame:
-        df = self.extract_script(episode_id, episode_num, episode_title)
-        if as_df:
-            return df.collect()
-        return self._df_to_script(df)
-
     def _download_data(self) -> str:
         """Download and cache the script from Kaggle.
 

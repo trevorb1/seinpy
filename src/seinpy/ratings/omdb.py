@@ -29,18 +29,6 @@ class OMDBRatingExtractor(RatingExtractor):
         """Get the raw data from the Open Movie Database."""
         return f"{OMDB_API}?apikey={self.omdb_api_key}&i="
 
-    def extract(
-        self,
-        episode_id: str | None = None,
-        episode_num: int | None = None,
-        episode_title: str | None = None,
-        as_df: bool = False,
-    ) -> Rating | pl.DataFrame:
-        data = self.extract_rating(episode_id, episode_num, episode_title)
-        if as_df:
-            return data
-        return self._df_to_rating(data)
-
     @staticmethod
     def convert_rating_2_float(rating: Any) -> float:
         """Convert the rating to a float."""

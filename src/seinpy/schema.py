@@ -163,7 +163,7 @@ class Episode(BaseModel):
             return self.rating.ref
         if self.credit:
             return self.credit.ref
-        return EpisodeRef()
+        raise ValueError("No episode reference found")
 
     @model_validator(mode="after")
     def _validate_metadata(self) -> Self:
@@ -195,4 +195,4 @@ class Episode(BaseModel):
         return self
 
     def __str__(self):
-        return f"Episode: {self.episode_title} (Rating: {self.rating.rating})"
+        return f"Episode ID: {self.ref.episode_id}\nEpisode Number: {self.ref.episode_num}\nEpisode Title: {self.ref.episode_title}"

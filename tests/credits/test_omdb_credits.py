@@ -3,8 +3,6 @@ import polars as pl
 from seinpy.credits.omdb import OMDBCreditExtractor
 from polars.testing import assert_frame_equal
 
-from seinpy.schema import Actor, Credit, Director, EpisodeRef, Writer
-
 
 @pytest.fixture
 def fake_df() -> pl.LazyFrame:
@@ -22,7 +20,7 @@ def fake_df() -> pl.LazyFrame:
 
 
 class TestOMDBCreditExtractor:
-    def test_extract_credits(self, monkeypatch, fake_df, fake_omdb_response):
+    def test_extract_credit(self, monkeypatch, fake_df, fake_omdb_response):
         metadata = pl.DataFrame(
             {
                 "imdb": ["tt0697784"],
@@ -46,7 +44,7 @@ class TestOMDBCreditExtractor:
         )
 
         extractor = OMDBCreditExtractor(omdb_api_key="key")
-        actual = extractor.extract_credits(episode_id="S01E02")
+        actual = extractor.extract_credit(episode_id="S01E02")
 
         expected = fake_df
 
@@ -55,42 +53,3 @@ class TestOMDBCreditExtractor:
     def test_get_api_call(self):
         extractor = OMDBCreditExtractor(omdb_api_key="key")
         assert extractor._get_api_call() == "http://www.omdbapi.com/?apikey=key&i="
-
-    def test_extract_to_df(self, monkeypatch, fake_df):
-        # Mock the extract_credits function
-        monkeypatch.setattr(
-            "seinpy.credits.omdb.OMDBCreditExtractor.extract_credits",
-            lambda *a, **k: fake_df,
-        )
-
-        extractor = OMDBCreditExtractor(omdb_api_key="key")
-        actual = extractor.extract(episode_id="S01E02", as_df=True)
-        expected = fake_df.collect()
-        assert_frame_equal(actual, expected)
-
-    def test_extract_to_credit(self, monkeypatch, fake_df):
-        # Mock the extract_credits function
-        monkeypatch.setattr(
-            "seinpy.credits.omdb.OMDBCreditExtractor.extract_credits",
-            lambda *a, **k: fake_df,
-        )
-        extractor = OMDBCreditExtractor(omdb_api_key="key")
-        actual = extractor.extract(episode_id="S01E02", as_df=False)
-        expected = Credit(
-            ref=EpisodeRef(
-                episode_id="S01E02",
-                episode_num=2,
-                episode_title="Episode 2",
-            ),
-            description="Seinfeld is literally a show about nothing.",
-            date="31 May 1990",
-            writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
-            directors=[Director(name="Tom Cherones")],
-            actors=[
-                Actor(name="Jerry Seinfeld"),
-                Actor(name="Julia Louis-Dreyfus"),
-                Actor(name="Michael Richards"),
-                Actor(name="Jason Alexander"),
-            ],
-        )
-        assert actual == expected

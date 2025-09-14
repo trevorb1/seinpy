@@ -28,26 +28,22 @@ class OMDBCreditExtractor(CreditExtractor):
         """Get the raw data from the Open Movie Database."""
         return f"{OMDB_API}?apikey={self.omdb_api_key}&i="
 
-    def extract(
-        self,
-        episode_id: str | None = None,
-        episode_num: int | None = None,
-        episode_title: str | None = None,
-        as_df: bool = False,
-    ) -> pl.DataFrame | Credit:
-        """Extract the credits for the given episode."""
-        data = self.extract_credits(episode_id, episode_num, episode_title)
-        if as_df:
-            return data.collect()
-        return self._df_to_credits(data)
-
-    def extract_credits(
+    def extract_credit(
         self,
         episode_id: str | None = None,
         episode_num: int | None = None,
         episode_title: str | None = None,
     ) -> pl.LazyFrame:
-        """Extract the credits for the given episode."""
+        """Extract the credits for the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            A dataframe with the credits for the given episode.
+        """
 
         df = filter_metadata(episode_id, episode_num, episode_title, "credits")
 

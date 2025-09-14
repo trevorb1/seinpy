@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 class ScriptExtractor(ABC):
     """Base strategy class for script extractors."""
 
-    @abstractmethod
     def extract(
         self,
         episode_id: str | None = None,
@@ -49,6 +48,31 @@ class ScriptExtractor(ABC):
         Notes:
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        df = self.extract_script(episode_id, episode_num, episode_title)
+        if as_df:
+            return df.collect()
+        return self._df_to_script(df)
+
+    @abstractmethod
+    def extract_script(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the script from the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            The script dataframe.
+
+        Raises:
+            ValueError: If no episode_id, episode_num, or episode_title is provided.
         """
         pass
 
@@ -154,7 +178,6 @@ class ScriptExtractor(ABC):
 class RatingExtractor(ABC):
     """Base strategy class for rating extractors."""
 
-    @abstractmethod
     def extract(
         self,
         episode_id: str | None = None,
@@ -179,6 +202,30 @@ class RatingExtractor(ABC):
         Notes:
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        data = self.extract_rating(episode_id, episode_num, episode_title)
+        if as_df:
+            return data
+        return self._df_to_rating(data)
+
+    @abstractmethod
+    def extract_rating(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the rating from the given episode.
+
+        Extract the rating for the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            A dataframe with the rating for the given episode.
         """
         pass
 
@@ -228,7 +275,6 @@ class RatingExtractor(ABC):
 class CreditExtractor(ABC):
     """Base strategy class for credit extractors."""
 
-    @abstractmethod
     def extract(
         self,
         episode_id: str | None = None,
@@ -253,6 +299,28 @@ class CreditExtractor(ABC):
         Notes:
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        data = self.extract_credit(episode_id, episode_num, episode_title)
+        if as_df:
+            return data.collect()
+        return self._df_to_credits(data)
+
+    @abstractmethod
+    def extract_credit(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the credit from the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            A dataframe with the credit for the given episode.
         """
         pass
 
