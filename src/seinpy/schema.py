@@ -49,7 +49,7 @@ class Director(BaseModel):
 
 
 class EpisodeRef(BaseModel):
-    episode_id: str
+    episode_id: str | None = None
     episode_num: int | None = None
     episode_title: str | None = None
 

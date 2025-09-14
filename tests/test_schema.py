@@ -68,6 +68,7 @@ class TestEpisodeRef:
         assert episode_ref != EpisodeRef(
             episode_id="S01E01", episode_num=1, episode_title=None
         )
+        assert episode_ref != "not an episode"
 
     def test_true_false(self):
         episode_ref = EpisodeRef(
@@ -117,6 +118,14 @@ class TestEpisodeRef:
     def test_episode_id_validation_invalid_format(self):
         with pytest.raises(ValueError):
             EpisodeRef(episode_id="S1E1", episode_num=1, episode_title="Test")
+
+    def test_episode_id_validation_invalid_type(self):
+        with pytest.raises(ValueError):
+            EpisodeRef(episode_id=123, episode_num=1, episode_title="Test")
+
+    def test_episode_id_validation_none_type(self):
+        ref = EpisodeRef(episode_id=None, episode_num=1, episode_title="Test")
+        assert ref.episode_id is None
 
 
 class TestRating:
@@ -202,3 +211,35 @@ class TestEpisode:
     def test_validate_metadata_no_components(self):
         episode = Episode()
         assert episode._validate_metadata() == episode
+
+    def test_ref_property(self):
+        ref = EpisodeRef(
+            episode_id="S01E01", episode_num=1, episode_title="Test Episode."
+        )
+        episode = Episode(
+            script=Script(ref=ref, script_lines=[]),
+        )
+        assert episode.ref == EpisodeRef(
+            episode_id="S01E01", episode_num=1, episode_title="Test Episode."
+        )
+
+        episode = Episode(
+            rating=Rating(ref=ref, rating=75.5, num_votes=100),
+        )
+        assert episode.ref == EpisodeRef(
+            episode_id="S01E01", episode_num=1, episode_title="Test Episode."
+        )
+
+        episode = Episode(
+            credit=Credit(
+                ref=ref,
+            ),
+        )
+        assert episode.ref == EpisodeRef(
+            episode_id="S01E01", episode_num=1, episode_title="Test Episode."
+        )
+
+    def test_ref_property_none(self):
+        episode = Episode()
+        with pytest.raises(ValueError):
+            episode.ref
