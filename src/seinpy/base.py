@@ -74,7 +74,7 @@ class ScriptExtractor(ABC):
         Raises:
             ValueError: If no episode_id, episode_num, or episode_title is provided.
         """
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def _df_to_script(df: pl.LazyFrame) -> Script:
@@ -227,7 +227,7 @@ class RatingExtractor(ABC):
         Returns:
             A dataframe with the rating for the given episode.
         """
-        pass
+        raise NotImplementedError
 
     def _df_to_rating(self, df: pl.LazyFrame) -> Rating:
         """Convert a dataframe to a rating."""
@@ -322,7 +322,7 @@ class CreditExtractor(ABC):
         Returns:
             A dataframe with the credit for the given episode.
         """
-        pass
+        raise NotImplementedError
 
     @staticmethod
     def _df_to_credits(df: pl.LazyFrame) -> Credit:
@@ -404,4 +404,4 @@ class Exporter(ABC):
         Args:
             data: The data to write (episodes, scripts, ratings, or credits).
         """
-        pass
+        raise NotImplementedError

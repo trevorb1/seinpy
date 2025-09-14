@@ -6,9 +6,9 @@ from seinpy.schema import Actor, Credit, Director, EpisodeRef, Rating, Writer
 
 
 class TestScriptExtractor:
-    def test_df_to_script(self, dummy_script_extractor, script):
-        extractor = dummy_script_extractor
-        df = pl.LazyFrame(
+    @pytest.fixture
+    def fake_df(self) -> pl.LazyFrame:
+        return pl.LazyFrame(
             {
                 "episode_id": ["S01E02"] * 4,
                 "episode_num": [2] * 4,
@@ -22,8 +22,17 @@ class TestScriptExtractor:
                 ],
             }
         )
-        actual = extractor._df_to_script(df)
+
+    def test_df_to_script(self, fake_df, dummy_script_extractor, script):
+        extractor = dummy_script_extractor
+        actual = extractor._df_to_script(fake_df)
         assert actual == script
+
+    def test_extract_to_df(self, fake_df, dummy_script_extractor):
+        extractor = dummy_script_extractor
+        actual = extractor.extract(episode_id="S01E02", as_df=True)
+        expected = fake_df.collect()
+        assert_frame_equal(actual, expected)
 
     def test_is_one_episode_passes(self, dummy_script_extractor):
         extractor = dummy_script_extractor
@@ -161,6 +170,31 @@ class TestCreditExtractor:
                 Actor(name="Jason Alexander", role="George"),
                 Actor(name="Julia Louis-Dreyfus", role="Elaine"),
                 Actor(name="Michael Richards", role="Kramer"),
+            ],
+        )
+        assert actual == expected
+
+    def test_df_to_credit_no_actor_roles(self, dummy_credit_extractor, fake_df):
+        extractor = dummy_credit_extractor
+        fake_df = fake_df.with_columns(
+            actors=pl.lit(
+                "Jerry Seinfeld;Jason Alexander;Julia Louis-Dreyfus;Michael Richards"
+            )
+        )
+        actual = extractor._df_to_credits(fake_df)
+        expected = Credit(
+            ref=EpisodeRef(
+                episode_id="S01E02", episode_num=2, episode_title="Episode 2"
+            ),
+            date="2025-01-01",
+            writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
+            directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
+            description="Seinfeld is literally a show about nothing.",
+            actors=[
+                Actor(name="Jerry Seinfeld"),
+                Actor(name="Jason Alexander"),
+                Actor(name="Julia Louis-Dreyfus"),
+                Actor(name="Michael Richards"),
             ],
         )
         assert actual == expected
