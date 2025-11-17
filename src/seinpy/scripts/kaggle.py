@@ -6,7 +6,6 @@ https://www.kaggle.com/datasets/thec03u5/seinfeld-chronicles and originates from
 from pathlib import Path
 
 from seinpy.constants import TWO_PART_EPISODES
-from seinpy.schema import Script
 from seinpy.base import ScriptExtractor
 from seinpy.utils import (
     get_episode_filter_priority,
@@ -55,11 +54,15 @@ class KaggleScriptExtractor(ScriptExtractor):
         """
         script = self._read_script()
         episode_info = self._read_episode_info()
+
+        # need to correct any duplicate pilot episodes
+        episode_info = self._correct_pilot_episode_id(episode_info).pipe(
+            self._adjust_episode_num
+        )
+
         return (
             self._join_script_and_info(episode_info, script)
             .pipe(self._convert_episodeid_to_episodenum)
-            .pipe(self._correct_pilot_episode_id)
-            .pipe(self._adjust_episode_num)
             .pipe(self._correct_2_part_episodes)
         )
 
