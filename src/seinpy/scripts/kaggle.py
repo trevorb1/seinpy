@@ -111,7 +111,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         return df
 
     @staticmethod
-    def _correct_pilot_episode_id(df: pl.DataFrame) -> pl.DataFrame:
+    def _correct_pilot_episode_id(df: pl.LazyFrame) -> pl.LazyFrame:
         """Corrects the episode id.
 
         The pilot episode and next episode from this dataset are both S01E01.
@@ -178,7 +178,10 @@ class KaggleScriptExtractor(ScriptExtractor):
 
         # ensure only one S01E01 exists
         pilot = df.filter(pl.col("episode_id") == pl.lit("S01E01"))
-        assert pilot.select("episode_num").unique().collect().height == 1
+        if isinstance(pilot, pl.LazyFrame):
+            assert pilot.select("episode_num").collect().height == 1
+        else:
+            assert pilot.select("episode_num").height == 1
 
         df = df.with_columns(
             pl.when(pl.col("episode_id") == pl.lit("S01E01"))
