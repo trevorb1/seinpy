@@ -14,14 +14,17 @@ class LogLevels(Enum):
 
 
 def configure_logging(level: LogLevels = LogLevels.debug) -> None:
-    log_level = str(level.name).upper()
-    log_levels = [level.value for level in LogLevels]
+    level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
 
-    if log_level not in log_levels:
-        logging.basicConfig(level=LogLevels.error, format=LOG_FORMAT_DEFAULT)
-        return
+    log_level = level_map.get(level.value, logging.WARNING)
 
     if level == LogLevels.debug:
-        logging.basicConfig(level=log_level, format=LOG_FORMAT_DEBUG)
+        logging.basicConfig(level=log_level, format=LOG_FORMAT_DEBUG, force=True)
     else:
-        logging.basicConfig(level=log_level, format=LOG_FORMAT_DEFAULT)
+        logging.basicConfig(level=log_level, format=LOG_FORMAT_DEFAULT, force=True)
