@@ -2,7 +2,17 @@ from typing import List, Union
 from pytest import fixture
 import polars as pl
 from seinpy.base import Exporter, ScriptExtractor, CreditExtractor, RatingExtractor
-from seinpy.schema import Credit, Episode, Rating, Script, EpisodeRef, ScriptLine
+from seinpy.schema import (
+    Actor,
+    Credit,
+    Director,
+    Episode,
+    Rating,
+    Script,
+    EpisodeRef,
+    ScriptLine,
+    Writer,
+)
 
 
 @fixture
@@ -56,6 +66,59 @@ def script():
             ScriptLine(speaker="Kramer", dialogue="Hi, I'm Kramer."),
             ScriptLine(speaker="Elaine", dialogue="Hi, I'm Elaine."),
         ],
+    )
+
+
+@fixture
+def fake_episode_ref():
+    return EpisodeRef(episode_id="S01E02", episode_num=2, episode_title="Episode 2")
+
+@fixture
+def fake_script(fake_episode_ref):
+    return Script(
+        ref=fake_episode_ref,
+        script_lines=[
+            ScriptLine(speaker="Jerry", dialogue="Hi, I'm Jerry."),
+            ScriptLine(speaker="George", dialogue="Hi, I'm George."),
+            ScriptLine(speaker="Kramer", dialogue="Hi, I'm Kramer."),
+            ScriptLine(speaker="Elaine", dialogue="Hi, I'm Elaine."),
+        ],
+    )
+
+
+@fixture
+def fake_credit(fake_episode_ref):
+    return Credit(
+        ref=fake_episode_ref,
+        description="Seinfeld is literally a show about nothing.",
+        date="2025-01-01",
+        writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
+        directors=[Director(name="Jerry Seinfeld"), Director(name="Larry David")],
+        actors=[
+            Actor(name="Jerry Seinfeld", role="Jerry"),
+            Actor(name="Jason Alexander", role="George"),
+            Actor(name="Julia Louis-Dreyfus", role="Elaine"),
+            Actor(name="Michael Richards", role="Kramer"),
+        ],
+    )
+
+
+@fixture
+def fake_rating(fake_episode_ref):
+    return Rating(
+        ref=fake_episode_ref,
+        rating=10,
+        num_votes=100,
+        link="https://example.com",
+    )
+
+
+@fixture
+def fake_episode(fake_script, fake_credit, fake_rating):
+    return Episode(
+        script=fake_script,
+        credit=fake_credit,
+        rating=fake_rating,
     )
 
 
