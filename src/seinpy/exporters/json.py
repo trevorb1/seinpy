@@ -10,7 +10,8 @@ from seinpy.schema import Episode
 class JsonExporter(Exporter):
     """Write the data to a json file."""
 
-    def convert_to_json(self, episodes: List[Episode] | Episode) -> list[dict]:
+    @staticmethod
+    def convert_to_json(episodes: List[Episode] | Episode) -> list[dict]:
         """Convert the data to a json string."""
         if isinstance(episodes, Episode):
             episodes = [episodes]

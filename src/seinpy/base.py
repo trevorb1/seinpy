@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List
 import polars as pl
 import logging
 from seinpy.schema import (
@@ -397,11 +397,13 @@ class Exporter(ABC):
     @abstractmethod
     def export(
         self,
-        data: Union[List[Episode], List[Script], List[Rating], List[Credit]],
+        episodes: List[Episode],
+        save_path: str,
     ) -> None:
         """Write the data to the file.
 
         Args:
             data: The data to write (episodes, scripts, ratings, or credits).
+            save_path: The path to save the data to.
         """
         raise NotImplementedError
