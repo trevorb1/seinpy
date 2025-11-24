@@ -1,3 +1,4 @@
+import json
 import pytest
 from seinpy.exporters.json import JsonExporter
 
@@ -87,4 +88,15 @@ class TestJsonExporter:
         expected = []
         expected.append(expected_json)
         expected.append(expected_json)
+        assert actual == expected
+
+    def test_export(self, fake_episode, expected_json, tmp_path):
+        save_path = tmp_path / "test_export.json"
+        JsonExporter().export([fake_episode], str(save_path))
+
+        assert save_path.exists()
+        with open(save_path, "r") as f:
+            actual = json.load(f)
+
+        expected = [expected_json]
         assert actual == expected
