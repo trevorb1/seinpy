@@ -2,7 +2,14 @@ import pytest
 import polars as pl
 from polars.testing import assert_frame_equal
 
-from seinpy.schema import Actor, Credit, Director, EpisodeRef, Rating, Writer
+from seinpy.schema import (
+    Actor,
+    Credit,
+    Director,
+    EpisodeRef,
+    Rating,
+    Writer,
+)
 
 
 class TestScriptExtractor:
@@ -232,7 +239,6 @@ class TestCreditExtractor:
         assert actual == expected
 
     def test_extract_to_df(self, dummy_credit_extractor, monkeypatch, fake_df):
-        # Mock the extract_credits function
         monkeypatch.setattr(
             "seinpy.base.CreditExtractor.extract_credit",
             lambda *a, **k: fake_df,
@@ -244,7 +250,6 @@ class TestCreditExtractor:
         assert_frame_equal(actual, expected)
 
     def test_extract_to_credit(self, dummy_credit_extractor, monkeypatch, fake_df):
-        # Mock the extract_credits function
         monkeypatch.setattr(
             "seinpy.base.CreditExtractor.extract_credit",
             lambda *a, **k: fake_df,
