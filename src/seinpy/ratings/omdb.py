@@ -10,7 +10,7 @@ from typing import Any
 from seinpy.base import RatingExtractor
 import polars as pl
 from seinpy.schema import Rating
-from seinpy.utils import filter_metadata, get_omdb_api_key
+from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
 from seinpy.constants import OMDB_API
 import logging
 import requests
@@ -82,16 +82,8 @@ class OMDBRatingExtractor(RatingExtractor):
 
         response = requests.get(f"{self.api_call}{imdb_id}").json()
 
-        episode_id = (
-            episode_id if episode_id else df.select("episode_id").collect().item()
-        )
-        episode_num = (
-            episode_num if episode_num else df.select("episode_num").collect().item()
-        )
-        episode_title = (
-            episode_title
-            if episode_title
-            else df.select("episode_title").collect().item()
+        episode_id, episode_num, episode_title = get_episode_id_num_title(
+            df, episode_id, episode_num, episode_title
         )
 
         episode_title = self._correct_episode_titles(episode_title)

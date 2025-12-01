@@ -8,9 +8,11 @@ from pathlib import Path
 from seinpy.constants import TWO_PART_EPISODES
 from seinpy.base import ScriptExtractor
 from seinpy.utils import (
+    filter_metadata,
     get_episode_filter_priority,
     shift_episode_ids,
     shift_episode_nums,
+    get_episode_id_num_title,
 )
 
 import kagglehub
@@ -85,19 +87,14 @@ class KaggleScriptExtractor(ScriptExtractor):
         Raises:
             ValueError: If no episode_id, episode_num, or episode_title is provided.
         """
-        priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
 
-        if priority == "episode_id":
-            logger.info(f"Extracting script for episode_id: {episode_id}")
-            df = self.data.filter(pl.col("episode_id") == episode_id)
-        elif priority == "episode_num":
-            logger.info(f"Extracting script for episode_num: {episode_num}")
-            df = self.data.filter(pl.col("episode_num") == episode_num)
-        elif priority == "episode_title":
-            logger.info(f"Extracting script for episode_title: {episode_title}")
-            df = self.data.filter(pl.col("episode_title") == episode_title)
-        else:
-            raise ValueError("No episode_id, episode_num, or episode_title provided")
+        df = filter_metadata(episode_id, episode_num, episode_title, "rating")
+
+        episode_id, episode_num, episode_title = get_episode_id_num_title(
+            df, episode_id, episode_num, episode_title
+        )
+
+        df = self.data.filter(pl.col("episode_id") == episode_id)
 
         # Check that we only have one episode
         if not self._is_one_episode(df):

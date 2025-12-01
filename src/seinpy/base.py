@@ -390,7 +390,6 @@ class CreditExtractor(ABC):
             actors=actors,
         )
 
-
 class Exporter(ABC):
     """Base strategy class for all writers."""
 

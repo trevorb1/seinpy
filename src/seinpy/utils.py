@@ -61,7 +61,7 @@ def filter_metadata(
     episode_id: str | None = None,
     episode_num: int | None = None,
     episode_title: str | None = None,
-    extractor_name: str | None = None,
+    logging_prefix: str | None = None,
     metadata: pl.LazyFrame = METADATA,
 ) -> pl.LazyFrame:
     """Filter the metadata dataframe based on the episode identifier.
@@ -70,7 +70,7 @@ def filter_metadata(
         episode_id: The id of the episode to extract.
         episode_num: The number of the episode to extract.
         episode_title: The title of the episode to extract.
-        extractor_name: The name of the extractor.
+        logging_prefix: The prefix to use for logging.
         metadata: The metadata dataframe to filter.
 
     Returns:
@@ -80,19 +80,19 @@ def filter_metadata(
         ValueError: If no episode_id, episode_num, or episode_title is provided.
     """
 
-    if not extractor_name:
-        extractor_name = "data"
+    if not logging_prefix:
+        logging_prefix = "data"
 
     priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
 
     if priority == "episode_id":
-        logger.info(f"Extracting {extractor_name} for episode_id: {episode_id}")
+        logger.info(f"Extracting {logging_prefix} for episode_id: {episode_id}")
         df = metadata.filter(pl.col("episode_id") == episode_id)
     elif priority == "episode_num":
-        logger.info(f"Extracting {extractor_name} for episode_num: {episode_num}")
+        logger.info(f"Extracting {logging_prefix} for episode_num: {episode_num}")
         df = metadata.filter(pl.col("episode_num") == episode_num)
     elif priority == "episode_title":
-        logger.info(f"Extracting {extractor_name} for episode_title: {episode_title}")
+        logger.info(f"Extracting {logging_prefix} for episode_title: {episode_title}")
         df = metadata.filter(pl.col("episode_title") == episode_title)
     else:
         raise ValueError("No episode_id, episode_num, or episode_title provided")
@@ -180,3 +180,63 @@ def shift_episode_nums(df: pl.LazyFrame, from_episode_num: str) -> pl.LazyFrame:
         .otherwise(pl.col("episode_num"))
         .alias("episode_num")
     )
+
+
+def get_episode_id_num_title(
+    df: pl.LazyFrame,
+    episode_id: str | None = None,
+    episode_num: int | None = None,
+    episode_title: str | None = None,
+) -> tuple[str, int, str]:
+    """Get the episode id, number, and title from the dataframe.
+
+    Args:
+        df: The metadata dataframe to get the episode id, number, and title from.
+        episode_id: The episode id to get.
+        episode_num: The episode number to get.
+        episode_title: The episode title to get.
+
+    Raises:
+        ValueError: If metadata columns are not coordinated.
+
+    Returns:
+        The episode id, number, and title.
+    """
+    cols = df.collect_schema().names()
+    if not all([x in cols for x in ["episode_id", "episode_num", "episode_title"]]):
+        raise ValueError("Columns are not coordinated")
+
+    priority = get_episode_filter_priority(episode_id, episode_num, episode_title)
+
+    valid_filter = True
+    if priority == "episode_id":
+        df = df.filter(pl.col("episode_id") == episode_id)
+        if df.collect().height != 1:
+            valid_filter = False
+        episode_id = episode_id
+        episode_num = df.select("episode_num").collect().item()
+        episode_title = df.select("episode_title").collect().item()
+    elif priority == "episode_num":
+        df = df.filter(pl.col("episode_num") == episode_num)
+        if df.collect().height != 1:
+            valid_filter = False
+        episode_id = df.select("episode_id").collect().item()
+        episode_title = df.select("episode_title").collect().item()
+    elif priority == "episode_title":
+        df = df.filter(pl.col("episode_title") == episode_title)
+        if df.collect().height != 1:
+            valid_filter = False
+        episode_id = df.select("episode_id").collect().item()
+        episode_num = df.select("episode_num").collect().item()
+    else:
+        raise ValueError("No episode_id, episode_num, or episode_title provided")
+
+    if not valid_filter:
+        raise ValueError(
+            f"No episode found with: \n"
+            f"episode_id: {episode_id} \n"
+            f"episode_num: {episode_num} \n"
+            f"episode_title: {episode_title}"
+        )
+
+    return episode_id, episode_num, episode_title

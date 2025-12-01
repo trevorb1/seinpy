@@ -2,6 +2,7 @@ import pytest
 import polars as pl
 from polars.testing import assert_frame_equal
 from seinpy.utils import (
+    get_episode_id_num_title,
     get_omdb_api_key,
     get_episode_filter_priority,
     filter_metadata,
@@ -159,3 +160,55 @@ class TestShiftEpisodeNums:
             }
         )
         assert_frame_equal(actual, expected)
+
+
+class TestGetEpisodeIdNumTitle:
+    def test_get_episode_id_num_title(self, metadata):
+        actual = get_episode_id_num_title(df=metadata, episode_id="S01E01")
+        expected = ("S01E01", 1, "Episode 1")
+        assert actual == expected
+
+    def test_get_episode_id_num_title_no_arguments(self, metadata):
+        with pytest.raises(ValueError):
+            get_episode_id_num_title(df=metadata)
+
+    def test_get_episode_id_num_title_no_episode_num(self, metadata):
+        actual = get_episode_id_num_title(df=metadata, episode_title="Episode 1")
+        expected = ("S01E01", 1, "Episode 1")
+        assert actual == expected
+
+    def test_get_episode_id_num_title_no_episode_title(self, metadata):
+        actual = get_episode_id_num_title(
+            df=metadata, episode_id="S01E01", episode_num=3
+        )
+        expected = ("S01E01", 1, "Episode 1")
+        assert actual == expected
+
+    def test_get_episode_id_num_title_episode_id_num_title(self, metadata):
+        actual = get_episode_id_num_title(
+            df=metadata, episode_id="S01E01", episode_num=3, episode_title="Title"
+        )
+        expected = ("S01E01", 1, "Episode 1")
+        assert actual == expected
+
+    def test_get_episode_id_num_title_no_episode_id(self, metadata):
+        actual = get_episode_id_num_title(
+            df=metadata, episode_num=3, episode_title="Title"
+        )
+        expected = ("S01E03", 3, "Episode 3")
+        assert actual == expected
+
+    def test_get_episode_id_num_title_invalid_arg(self, metadata):
+        with pytest.raises(ValueError):
+            get_episode_id_num_title(df=metadata, episode_id="invalid")
+
+    def test_get_episode_id_num_title_invalid_schema(self):
+        wrong_metadata = pl.LazyFrame(
+            {
+                "wrong_header": ["Episode 1"],
+                "another_wrong_header": ["S01E01"],
+                "yet_another_wrong_header": [1],
+            }
+        )
+        with pytest.raises(ValueError):
+            get_episode_id_num_title(df=wrong_metadata, episode_id="S01E01")

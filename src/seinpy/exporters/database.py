@@ -34,8 +34,8 @@ class Script(SQLModel, table=True):
 class ScriptLine(SQLModel, table=True):
     # id is optional because sqlite autogenerates it because it's the primary key.
     # this is because ScriptLine is a child of Script
-    id: Optional[int] = Field(default=None, primary_key=True)
-    episode_id: str = Field(foreign_key="script.episode_id")
+    id: Optional[int] = Field(default=None, primary_key=True,)
+    episode_id: str = Field(foreign_key="script.episode_id", index=True)
     speaker: str
     dialogue: str
 
@@ -62,7 +62,7 @@ class Credit(SQLModel, table=True):
 
 class CreditPerson(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    episode_id: str = Field(foreign_key="credit.episode_id")
+    episode_id: str = Field(foreign_key="credit.episode_id", index=True)
     type: str  # writer, director, actor
     name: str
     role: Optional[str] = None  # only for actors

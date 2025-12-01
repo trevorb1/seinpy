@@ -1,8 +1,18 @@
 from __future__ import annotations
-from typing import List
+from pathlib import Path
+from typing import Any, List
 import polars as pl
 from seinpy.constants import METADATA
-from seinpy.schema import Episode
+from seinpy.scripts.kaggle import KaggleScriptExtractor
+from seinpy.credits.omdb import OMDBCreditExtractor
+from seinpy.ratings.omdb import OMDBRatingExtractor
+from seinpy.exporters.database import DatabaseExporter
+from seinpy.exporters.csv import CsvExporter
+from seinpy.exporters.json import JsonExporter
+from seinpy.scripts.empty import EmptyScriptExtractor
+from seinpy.credits.empty import EmptyCreditExtractor
+from seinpy.ratings.empty import EmptyRatingExtractor
+from seinpy.schema import Credit, Episode, Rating, Script
 from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor, Exporter
 from seinpy.utils import get_episode_ids_from_seasons
 import logging
@@ -26,10 +36,15 @@ class Context:
         Usually, the Context accepts a strategy through the constructor, but
         also provides a setter to change it at runtime.
         """
-
-        self._script_extractor = script_extractor
-        self._credit_extractor = credit_extractor
-        self._rating_extractor = rating_extractor
+        self._script_extractor = (
+            script_extractor if script_extractor else EmptyScriptExtractor()
+        )
+        self._credit_extractor = (
+            credit_extractor if credit_extractor else EmptyCreditExtractor()
+        )
+        self._rating_extractor = (
+            rating_extractor if rating_extractor else EmptyRatingExtractor()
+        )
         self._exporter = exporter
 
     @property
@@ -161,23 +176,184 @@ class Context:
                 metadata=metadata,
             )
 
-    def read_and_write(self) -> None:
+    def write(
+        self,
+        data: List[Episode],
+        save_path: str,
+    ) -> None:
+        """Export the data to a file."""
+        if not self._exporter:
+            raise ValueError("Must provide an exporter")
+        self._exporter.export(data=data, save_path=save_path)
+
+    def read_and_write(self, **kwargs: dict[str, Any]) -> None:
         """
         The Context delegates some work to the Strategy object instead of
         implementing multiple versions of the algorithm on its own.
         """
-        raise NotImplementedError
+        if not self._exporter:
+            raise ValueError("Must provide an exporter")
+        episodes = self.read(**kwargs)
+        try:
+            save_path = kwargs["save_path"]
+        except KeyError:
+            raise ValueError("Save path not provided")
+        self.write(episodes, save_path)
 
 
-if __name__ == "__main__":
-    # The client code picks a concrete strategy and passes it to the context.
-    # The client should be aware of the differences between strategies in order
-    # to make the right choice.
+################################################
+# Helpers for assigning extractors and exporters
+################################################
 
-    context = Context(
-        ScriptExtractor(),
-        CreditExtractor(),
-        RatingExtractor(),
+
+def _get_script_extractor(source: str) -> ScriptExtractor:
+    if source == "kaggle":
+        return KaggleScriptExtractor()
+    elif source == "imdb":
+        raise NotImplementedError("IMDb source not implemented")
+    elif source == "seinfeldscripts":
+        raise NotImplementedError("SeinfeldScripts source not implemented")
+    elif source == "seinology":
+        raise NotImplementedError("Seinology source not implemented")
+    else:
+        raise ValueError(f"Invalid source: {source}")
+
+
+def _get_credit_extractor(source: str) -> CreditExtractor:
+    if source == "omdb":
+        return OMDBCreditExtractor()
+    elif source == "rottentomatoes":
+        raise NotImplementedError("Rotten Tomatoes source not implemented")
+    else:
+        raise ValueError(f"Invalid source: {source}")
+
+
+def _get_rating_extractor(source: str) -> RatingExtractor:
+    if source == "omdb":
+        return OMDBRatingExtractor()
+    elif source == "rottentomatoes":
+        raise NotImplementedError("Rotten Tomatoes source not implemented")
+    else:
+        raise ValueError(f"Invalid source: {source}")
+
+
+def _get_exporter(save_type: str) -> Exporter:
+    if save_type == "database":
+        return DatabaseExporter()
+    elif save_type == "csv":
+        return CsvExporter()
+    elif save_type == "json":
+        return JsonExporter()
+    else:
+        raise ValueError(f"Invalid save type: {save_type}")
+
+
+##################
+# Public Interface
+##################
+
+
+def read_scripts(
+    source: str,
+    episode_ids: str | List[str] | None = None,
+    episode_nums: int | List[int] | None = None,
+    episode_titles: str | List[str] | None = None,
+    seasons: int | List[int] | None = None,
+    get_all: bool = False,
+) -> List[Script]:
+    extractor = _get_script_extractor(source)
+    context = Context(script_extractor=extractor)
+    data = context.read(
+        episode_ids=episode_ids,
+        episode_nums=episode_nums,
+        episode_titles=episode_titles,
+        seasons=seasons,
+        get_all=get_all,
+        metadata=METADATA,
     )
-    print("Client: Strategy is set to normal sorting.")
-    context.do_some_business_logic()
+    return [episode.script for episode in data]
+
+
+def read_credits(
+    source: str,
+    episode_ids: str | None = None,
+    episode_nums: int | None = None,
+    episode_titles: str | None = None,
+    seasons: int | List[int] | None = None,
+    get_all: bool = False,
+) -> List[Credit]:
+    extractor = _get_credit_extractor(source)
+    context = Context(credit_extractor=extractor)
+    data = context.read(
+        episode_ids=episode_ids,
+        episode_nums=episode_nums,
+        episode_titles=episode_titles,
+        seasons=seasons,
+        get_all=get_all,
+        metadata=METADATA,
+    )
+    return [episode.credit for episode in data]
+
+
+def read_ratings(
+    source: str,
+    episode_ids: str | List[str] | None = None,
+    episode_nums: int | List[int] | None = None,
+    episode_titles: str | List[str] | None = None,
+    seasons: int | List[int] | None = None,
+    get_all: bool = False,
+) -> List[Rating]:
+    extractor = _get_rating_extractor(source)
+    context = Context(rating_extractor=extractor)
+    data = context.read(
+        episode_ids=episode_ids,
+        episode_nums=episode_nums,
+        episode_titles=episode_titles,
+        seasons=seasons,
+        get_all=get_all,
+        metadata=METADATA,
+    )
+    return [episode.rating for episode in data]
+
+
+def read_episodes(
+    source: dict[str, Any],
+    episode_ids: str | List[str] | None = None,
+    episode_nums: int | List[int] | None = None,
+    episode_titles: str | List[str] | None = None,
+    seasons: int | List[int] | None = None,
+    get_all: bool = False,
+) -> Episode:
+    script = _get_script_extractor(source["script"])
+    credit = _get_credit_extractor(source["credit"])
+    rating = _get_rating_extractor(source["rating"])
+    context = Context(
+        script_extractor=script, credit_extractor=credit, rating_extractor=rating
+    )
+    return context.read(
+        episode_ids=episode_ids,
+        episode_nums=episode_nums,
+        episode_titles=episode_titles,
+        seasons=seasons,
+        get_all=get_all,
+        metadata=METADATA,
+    )
+
+
+def write_episodes(
+    save_type: str,
+    save_path: str,
+    data: List[Episode],
+) -> None:
+    save_path = Path(save_path)
+    if save_type == "database" and not save_path.suffix == ".db":
+        raise ValueError("Save path must end with .db")
+    elif save_type == "csv" and not save_path.suffix == ".csv":
+        raise ValueError("Save path must end with .csv")
+    elif save_type == "json" and not save_path.suffix == ".json":
+        raise ValueError("Save path must end with .json")
+    else:
+        raise ValueError(f"Invalid save type: {save_type}")
+
+    exporter = _get_exporter(save_type)
+    return exporter.export(data, save_path)

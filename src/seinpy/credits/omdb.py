@@ -9,7 +9,7 @@ https://www.omdbapi.com/apikey.aspx
 import polars as pl
 from seinpy.base import CreditExtractor
 from seinpy.schema import Credit
-from seinpy.utils import filter_metadata, get_omdb_api_key
+from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
 from seinpy.constants import OMDB_API
 import logging
 import requests
@@ -47,21 +47,12 @@ class OMDBCreditExtractor(CreditExtractor):
 
         df = filter_metadata(episode_id, episode_num, episode_title, "credits")
 
+        episode_id, episode_num, episode_title = get_episode_id_num_title(
+            df, episode_id, episode_num, episode_title
+        )
+
         imdb_id = df.select("imdb").collect().item()
-
         response = requests.get(f"{self.api_call}{imdb_id}").json()
-
-        episode_id = (
-            episode_id if episode_id else df.select("episode_id").collect().item()
-        )
-        episode_num = (
-            episode_num if episode_num else df.select("episode_num").collect().item()
-        )
-        episode_title = (
-            episode_title
-            if episode_title
-            else df.select("episode_title").collect().item()
-        )
 
         data = {
             "episode_id": episode_id,
