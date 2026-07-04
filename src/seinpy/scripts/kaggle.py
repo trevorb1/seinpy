@@ -9,7 +9,6 @@ from seinpy.constants import TWO_PART_EPISODES
 from seinpy.base import ScriptExtractor
 from seinpy.utils import (
     filter_metadata,
-    get_episode_filter_priority,
     shift_episode_ids,
     shift_episode_nums,
     get_episode_id_num_title,
@@ -30,6 +29,12 @@ class KaggleScriptExtractor(ScriptExtractor):
         self.zip_folder = self._download_data()
         self.data = self._get_raw_data()
         logger.info("Loaded Kaggle Seinfeld episodes")
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another KaggleScriptExtractor instance."""
+        if not isinstance(other, KaggleScriptExtractor):
+            return NotImplemented
+        return self.zip_folder == other.zip_folder and self.data.equals(other.data)
 
     def _download_data(self) -> str:
         """Download and cache the script from Kaggle.

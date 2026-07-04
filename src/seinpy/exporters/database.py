@@ -34,7 +34,10 @@ class Script(SQLModel, table=True):
 class ScriptLine(SQLModel, table=True):
     # id is optional because sqlite autogenerates it because it's the primary key.
     # this is because ScriptLine is a child of Script
-    id: Optional[int] = Field(default=None, primary_key=True,)
+    id: Optional[int] = Field(
+        default=None,
+        primary_key=True,
+    )
     episode_id: str = Field(foreign_key="script.episode_id", index=True)
     speaker: str
     dialogue: str
@@ -162,6 +165,12 @@ def insert_credit(session: Session, credit: Credit) -> None:
 
 class DatabaseExporter(Exporter):
     """Write the data to a database."""
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another DatabaseExporter instance."""
+        if not isinstance(other, DatabaseExporter):
+            return NotImplemented
+        return True
 
     def export(self, data: List[Episode], save_path: str) -> None:
         """Export the data to a database."""

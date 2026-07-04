@@ -12,6 +12,12 @@ import polars as pl
 class CsvExporter(Exporter):
     """Write the data to a csv file."""
 
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another CsvExporter instance."""
+        if not isinstance(other, CsvExporter):
+            return NotImplemented
+        return True
+
     @staticmethod
     def _episode_ref_to_dataframe(episode_ref: EpisodeRef) -> pl.LazyFrame:
         """Convert an episode reference to a dataframe."""

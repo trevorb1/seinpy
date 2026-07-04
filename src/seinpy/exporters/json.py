@@ -10,6 +10,12 @@ from seinpy.schema import Episode
 class JsonExporter(Exporter):
     """Write the data to a json file."""
 
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another JsonExporter instance."""
+        if not isinstance(other, JsonExporter):
+            return False
+        return True
+
     @staticmethod
     def convert_to_json(episodes: List[Episode] | Episode) -> list[dict]:
         """Convert the data to a json string."""

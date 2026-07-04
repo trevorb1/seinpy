@@ -9,7 +9,6 @@ https://www.omdbapi.com/apikey.aspx
 from typing import Any
 from seinpy.base import RatingExtractor
 import polars as pl
-from seinpy.schema import Rating
 from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
 from seinpy.constants import OMDB_API
 import logging
@@ -24,6 +23,14 @@ class OMDBRatingExtractor(RatingExtractor):
     def __init__(self, omdb_api_key: str | None = None) -> None:
         self.omdb_api_key = get_omdb_api_key(omdb_api_key)
         self.api_call = self._get_api_call()
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another OMDBRatingExtractor instance."""
+        if not isinstance(other, OMDBRatingExtractor):
+            return NotImplemented
+        return (
+            self.omdb_api_key == other.omdb_api_key and self.api_call == other.api_call
+        )
 
     def _get_api_call(self) -> str:
         """Get the raw data from the Open Movie Database."""

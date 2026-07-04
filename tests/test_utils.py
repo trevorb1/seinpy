@@ -9,6 +9,7 @@ from seinpy.utils import (
     get_episode_ids_from_seasons,
     shift_episode_ids,
     shift_episode_nums,
+    is_valid_extractors,
 )
 
 
@@ -212,3 +213,64 @@ class TestGetEpisodeIdNumTitle:
         )
         with pytest.raises(ValueError):
             get_episode_id_num_title(df=wrong_metadata, episode_id="S01E01")
+
+
+class TestIsValidExtractors:
+    def test_is_valid_extractors_empty_dict(self):
+        assert is_valid_extractors({}) is True
+
+    def test_is_valid_extractors_all_none(self):
+        source = {"script": None, "credit": None, "rating": None}
+        assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_valid_script(self):
+        source = {"script": "kaggle"}
+        assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_valid_credit(self):
+        source = {"credit": "omdb"}
+        assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_valid_rating(self):
+        source = {"rating": "omdb"}
+        assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_all_valid_extractors(self):
+        source = {"script": "imdb", "credit": "rottentomatoes", "rating": "omdb"}
+        assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_all_script_extractors(self):
+        for extractor in ["kaggle", "imdb", "seinfeldscripts", "seinology"]:
+            source = {"script": extractor}
+            assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_all_credit_extractors(self):
+        for extractor in ["omdb", "rottentomatoes"]:
+            source = {"credit": extractor}
+            assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_all_rating_extractors(self):
+        for extractor in ["omdb"]:
+            source = {"rating": extractor}
+            assert is_valid_extractors(source) is True
+
+    def test_is_valid_extractors_invalid_script_extractor(self):
+        source = {"script": "invalid_script"}
+        assert is_valid_extractors(source) is False
+
+    def test_is_valid_extractors_invalid_credit_extractor(self):
+        source = {"credit": "invalid_credit"}
+        assert is_valid_extractors(source) is False
+
+    def test_is_valid_extractors_invalid_rating_extractor(self):
+        source = {"rating": "invalid_rating"}
+        assert is_valid_extractors(source) is False
+
+    def test_is_valid_extractors_invalid_key(self):
+        source = {"invalid_key": "some_value"}
+        assert is_valid_extractors(source) is False
+
+    def test_is_valid_extractors_invalid_key_with_valid_extractors(self):
+        source = {"script": "kaggle", "invalid_key": "some_value"}
+        assert is_valid_extractors(source) is False
+

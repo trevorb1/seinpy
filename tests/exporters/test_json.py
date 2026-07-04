@@ -100,3 +100,13 @@ class TestJsonExporter:
 
         expected = [expected_json]
         assert actual == expected
+
+    def test_equal(self):
+        actual = JsonExporter()
+        expected = JsonExporter()
+        assert actual == expected
+
+    def test_not_equal(self):
+        actual = JsonExporter()
+        expected = "not a JsonExporter"
+        assert actual != expected

@@ -5,7 +5,18 @@ from seinpy.context import (
     CreditExtractor,
     RatingExtractor,
     Exporter,
+    read_episodes,
+    _get_script_extractor,
+    _get_credit_extractor,
+    _get_rating_extractor,
+    _get_exporter,
 )
+from seinpy.scripts.kaggle import KaggleScriptExtractor
+from seinpy.credits.omdb import OMDBCreditExtractor
+from seinpy.ratings.omdb import OMDBRatingExtractor
+from seinpy.exporters.database import DatabaseExporter
+from seinpy.exporters.csv import CsvExporter
+from seinpy.exporters.json import JsonExporter
 from seinpy.schema import (
     Director,
     Episode,
@@ -17,6 +28,10 @@ from seinpy.schema import (
     Actor,
     Writer,
 )
+from seinpy.scripts.empty import EmptyScriptExtractor
+from seinpy.credits.empty import EmptyCreditExtractor
+from seinpy.ratings.empty import EmptyRatingExtractor
+
 
 
 @pytest.fixture
@@ -207,3 +222,329 @@ class TestContext:
         expected = self.expected_episode
         assert len(actual) == 5  # length of metadata for all seasons
         assert actual[0] == expected
+
+
+class TestGetScriptExtractor:
+    def test_get_script_extractor_kaggle(self):
+        """Test that _get_script_extractor returns KaggleScriptExtractor for 'kaggle' source."""
+        extractor = _get_script_extractor("kaggle")
+        assert isinstance(extractor, KaggleScriptExtractor)
+
+    def test_get_script_extractor_invalid_source(self):
+        """Test that _get_script_extractor raises ValueError for invalid source."""
+        with pytest.raises(ValueError):
+            _get_script_extractor("invalid_source")
+
+
+class TestGetCreditExtractor:
+    def test_get_credit_extractor_omdb(self):
+        """Test that _get_credit_extractor returns OMDBCreditExtractor for 'omdb' source."""
+        extractor = _get_credit_extractor("omdb", omdb_api_key="key")
+        assert isinstance(extractor, OMDBCreditExtractor)
+
+    def test_get_credit_extractor_invalid_source(self):
+        """Test that _get_credit_extractor raises ValueError for invalid source."""
+        with pytest.raises(ValueError):
+            _get_credit_extractor("invalid_source")
+
+
+class TestGetRatingExtractor:
+    def test_get_rating_extractor_omdb(self):
+        """Test that _get_rating_extractor returns OMDBRatingExtractor for 'omdb' source."""
+        extractor = _get_rating_extractor("omdb", omdb_api_key="key")
+        assert isinstance(extractor, OMDBRatingExtractor)
+
+    def test_get_rating_extractor_invalid_source(self):
+        """Test that _get_rating_extractor raises ValueError for invalid source."""
+        with pytest.raises(ValueError):
+            _get_rating_extractor("invalid_source")
+
+
+class TestGetExporter:
+    def test_get_exporter_database(self):
+        """Test that _get_exporter returns DatabaseExporter for 'database' save type."""
+        exporter = _get_exporter("database")
+        assert isinstance(exporter, DatabaseExporter)
+
+    def test_get_exporter_csv(self):
+        """Test that _get_exporter returns CsvExporter for 'csv' save type."""
+        exporter = _get_exporter("csv")
+        assert isinstance(exporter, CsvExporter)
+
+    def test_get_exporter_json(self):
+        """Test that _get_exporter returns JsonExporter for 'json' save type."""
+        exporter = _get_exporter("json")
+        assert isinstance(exporter, JsonExporter)
+
+    def test_get_exporter_invalid_save_type(self):
+        """Test that _get_exporter raises ValueError for invalid save type."""
+        with pytest.raises(ValueError):
+            _get_exporter("invalid_type")
+
+
+class TestReadEpisodes:
+    def test_invalid_source(self):
+        source = {"invalid_key": "value"}
+        with pytest.raises(AssertionError):
+            read_episodes(source=source)
+
+    def test_invalid_script_extractor(self):
+        """Test that read_episodes raises AssertionError for invalid script extractor."""
+        source = {"script": "invalid_script"}
+        with pytest.raises(AssertionError):
+            read_episodes(source=source)
+
+    def test_invalid_credit_extractor(self):
+        """Test that read_episodes raises AssertionError for invalid credit extractor."""
+        source = {"credit": "invalid_credit"}
+        with pytest.raises(AssertionError):
+            read_episodes(source=source)
+
+    def test_invalid_rating_extractor(self):
+        """Test that read_episodes raises AssertionError for invalid rating extractor."""
+        source = {"rating": "invalid_rating"}
+        with pytest.raises(AssertionError):
+            read_episodes(source=source)
+
+    def test_read_episode(
+        self, metadata, monkeypatch, fake_script, fake_credit, fake_rating, fake_episode
+    ):
+        """Test reading single episode."""
+        source = {"script": "kaggle", "credit": "omdb", "rating": "omdb"}
+
+        monkeypatch.setattr(
+            KaggleScriptExtractor,
+            "extract",
+            lambda self, *a, **k: fake_script,
+        )
+        monkeypatch.setattr(
+            OMDBCreditExtractor,
+            "extract",
+            lambda self, *a, **k: fake_credit,
+        )
+        monkeypatch.setattr(
+            OMDBRatingExtractor,
+            "extract",
+            lambda self, *a, **k: fake_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02"],
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        expected = [fake_episode]
+        assert actual == expected
+
+    def test_read_episodes(
+        self, metadata, monkeypatch, fake_script, fake_credit, fake_rating, fake_episode
+    ):
+        """Test reading multiple episodes."""
+        source = {"script": "kaggle", "credit": "omdb", "rating": "omdb"}
+
+        monkeypatch.setattr(
+            KaggleScriptExtractor,
+            "extract",
+            lambda self, *a, **k: fake_script,
+        )
+        monkeypatch.setattr(
+            OMDBCreditExtractor,
+            "extract",
+            lambda self, *a, **k: fake_credit,
+        )
+        monkeypatch.setattr(
+            OMDBRatingExtractor,
+            "extract",
+            lambda self, *a, **k: fake_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02", "S01E02"],
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        expected = [fake_episode, fake_episode]
+        assert actual == expected
+
+    def test_read_episodes_by_seasons(
+        self, metadata, monkeypatch, fake_script, fake_credit, fake_rating
+    ):
+        """Test reading episodes by seasons."""
+        source = {"script": "kaggle", "credit": "omdb", "rating": "omdb"}
+
+        monkeypatch.setattr(
+            KaggleScriptExtractor,
+            "extract",
+            lambda self, *a, **k: fake_script,
+        )
+        monkeypatch.setattr(
+            OMDBCreditExtractor,
+            "extract",
+            lambda self, *a, **k: fake_credit,
+        )
+        monkeypatch.setattr(
+            OMDBRatingExtractor,
+            "extract",
+            lambda self, *a, **k: fake_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            seasons=[1],
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        assert len(actual) == 3  # length of metadata for season 1
+
+    def test_read_episodes_all(self, metadata, monkeypatch, fake_script, fake_credit, fake_rating):
+        """Test reading all episodes with get_all=True."""
+        source = {"script": "kaggle", "credit": "omdb", "rating": "omdb"}
+
+        monkeypatch.setattr(
+            KaggleScriptExtractor,
+            "extract",
+            lambda self, *a, **k: fake_script,
+        )
+        monkeypatch.setattr(
+            OMDBCreditExtractor,
+            "extract",
+            lambda self, *a, **k: fake_credit,
+        )
+        monkeypatch.setattr(
+            OMDBRatingExtractor,
+            "extract",
+            lambda self, *a, **k: fake_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            get_all=True,
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        assert len(actual) == 5  # length of metadata for all seasons
+
+    def test_read_episodes_empty_source(self, metadata, monkeypatch):
+        """Test reading episodes with empty source dict (uses empty extractors)."""
+
+        source = {}
+
+        monkeypatch.setattr(
+            EmptyScriptExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_script,
+        )
+        monkeypatch.setattr(
+            EmptyCreditExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_credit,
+        )
+        monkeypatch.setattr(
+            EmptyRatingExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02"],
+            metadata=metadata,
+        )
+        expected = [TestContext.expected_episode]
+        assert actual == expected
+
+    def test_read_episodes_script_only(self, metadata, monkeypatch):
+        """Test reading episodes with only script extractor."""
+        source = {"script": "kaggle"}
+
+        expected_script = TestContext.expected_script
+        expected_credit = TestContext.expected_credit
+        expected_rating = TestContext.expected_rating
+
+        monkeypatch.setattr(
+            KaggleScriptExtractor,
+            "extract",
+            lambda *a, **k: expected_script,
+        )
+        monkeypatch.setattr(
+            EmptyCreditExtractor,
+            "extract",
+            lambda *a, **k: expected_credit,
+        )
+        monkeypatch.setattr(
+            EmptyRatingExtractor,
+            "extract",
+            lambda *a, **k: expected_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02"],
+            metadata=metadata,
+        )
+        expected = [TestContext.expected_episode]
+        assert actual == expected
+
+    def test_read_episodes_credit_only(self, metadata, monkeypatch):
+        """Test reading episodes with only credit extractor."""
+        source = {"credit": "omdb"}
+
+        expected_script = TestContext.expected_script
+        expected_credit = TestContext.expected_credit
+        expected_rating = TestContext.expected_rating
+
+        monkeypatch.setattr(
+            EmptyScriptExtractor,
+            "extract",
+            lambda *a, **k: expected_script,
+        )
+        monkeypatch.setattr(
+            OMDBCreditExtractor,
+            "extract",
+            lambda *a, **k: expected_credit,
+        )
+        monkeypatch.setattr(
+            EmptyRatingExtractor,
+            "extract",
+            lambda *a, **k: expected_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02"],
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        expected = [TestContext.expected_episode]
+        assert actual == expected
+
+    def test_read_episodes_rating_only(self, metadata, monkeypatch):
+        """Test reading episodes with only rating extractor."""
+        source = {"rating": "omdb"}
+
+        monkeypatch.setattr(
+            EmptyScriptExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_script,
+        )
+        monkeypatch.setattr(
+            EmptyCreditExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_credit,
+        )
+        monkeypatch.setattr(
+            OMDBRatingExtractor,
+            "extract",
+            lambda *a, **k: TestContext.expected_rating,
+        )
+
+        actual = read_episodes(
+            source=source,
+            episode_ids=["S01E02"],
+            omdb_api_key="key",
+            metadata=metadata,
+        )
+        expected = [TestContext.expected_episode]
+        assert actual == expected

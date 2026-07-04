@@ -2,7 +2,13 @@
 
 from typing import List, Optional
 import os
-from seinpy.constants import METADATA
+from typing_extensions import Any
+from seinpy.constants import (
+    METADATA,
+    SCRIPT_EXTRACTORS,
+    CREDIT_EXTRACTORS,
+    RATING_EXTRACTORS,
+)
 import polars as pl
 import logging
 
@@ -23,9 +29,8 @@ def get_omdb_api_key(key: str | None = None) -> str:
     """
     if key:
         return key
-    else:
-        key = os.getenv("OMDB")
-    if key is None:
+    key = os.getenv("OMDB")
+    if not key:
         raise ValueError("OMDB_API_KEY is not set")
     return key
 
@@ -240,3 +245,36 @@ def get_episode_id_num_title(
         )
 
     return episode_id, episode_num, episode_title
+
+
+def is_valid_extractors(source: dict[str, Any]) -> bool:
+    """Check if the extractors are valid."""
+    script_extractor = source.get("script", None)
+    credit_extractor = source.get("credit", None)
+    rating_extractor = source.get("rating", None)
+
+    if script_extractor and script_extractor not in SCRIPT_EXTRACTORS:
+        logger.warning(
+            f"Invalid script extractor: {script_extractor}. Must be one of {SCRIPT_EXTRACTORS}."
+        )
+        return False
+    if credit_extractor and credit_extractor not in CREDIT_EXTRACTORS:
+        logger.warning(
+            f"Invalid credit extractor: {credit_extractor}. Must be one of {CREDIT_EXTRACTORS}."
+        )
+        return False
+    if rating_extractor and rating_extractor not in RATING_EXTRACTORS:
+        logger.warning(
+            f"Invalid rating extractor: {rating_extractor}. Must be one of {RATING_EXTRACTORS}."
+        )
+        return False
+
+    for key, value in source.items():
+        if value is not None:
+            if key not in ["script", "credit", "rating"]:
+                logger.warning(
+                    f"Invalid extractor: {key}. Must be one of 'script', 'credit', or 'rating'."
+                )
+                return False
+
+    return True

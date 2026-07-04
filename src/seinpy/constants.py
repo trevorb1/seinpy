@@ -1,6 +1,11 @@
 import polars as pl
 from pathlib import Path
 
+SCRIPT_EXTRACTORS = ["kaggle", "imdb", "seinfeldscripts", "seinology"]
+CREDIT_EXTRACTORS = ["omdb", "rottentomatoes"]
+RATING_EXTRACTORS = ["omdb"]
+EXPORTERS = ["database", "csv", "json"]
+
 TWO_PART_EPISODES = [
     {"episode_id": "S03E17", "episode_num": 34, "episode_title": "The Boyfriend"},
     {"episode_id": "S04E23", "episode_num": 62, "episode_title": "The Pilot"},

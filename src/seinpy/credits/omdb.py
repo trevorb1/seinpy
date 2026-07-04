@@ -24,6 +24,14 @@ class OMDBCreditExtractor(CreditExtractor):
         self.omdb_api_key = get_omdb_api_key(omdb_api_key)
         self.api_call = self._get_api_call()
 
+    def __eq__(self, other: object) -> bool:
+        """Check equality with another OMDBCreditExtractor instance."""
+        if not isinstance(other, OMDBCreditExtractor):
+            return NotImplemented
+        return (
+            self.omdb_api_key == other.omdb_api_key and self.api_call == other.api_call
+        )
+
     def _get_api_call(self) -> str:
         """Get the raw data from the Open Movie Database."""
         return f"{OMDB_API}?apikey={self.omdb_api_key}&i="
