@@ -249,6 +249,11 @@ def get_episode_id_num_title(
 
 def is_valid_extractors(source: dict[str, Any]) -> bool:
     """Check if the extractors are valid."""
+
+    if not isinstance(source, dict):
+        example = {"script": "xxx", "credit": "xxx", "rating": "xxx"}
+        raise ValueError(f"Source must be a dictionary in the form {example}")
+
     script_extractor = source.get("script", None)
     credit_extractor = source.get("credit", None)
     rating_extractor = source.get("rating", None)

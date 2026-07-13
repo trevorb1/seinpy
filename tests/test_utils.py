@@ -274,3 +274,6 @@ class TestIsValidExtractors:
         source = {"script": "kaggle", "invalid_key": "some_value"}
         assert is_valid_extractors(source) is False
 
+    def test_is_valid_extractors_not_a_dict(self):
+        with pytest.raises(ValueError):
+            is_valid_extractors("kaggle")

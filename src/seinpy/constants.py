@@ -21,6 +21,6 @@ TWO_PART_EPISODES = [
     {"episode_id": "S09E22", "episode_num": 172, "episode_title": "The Finale"},
 ]
 
-METADATA = pl.scan_csv(Path("src", "seinpy", "data", "data.csv"))
+METADATA = pl.scan_csv(Path(Path(__file__).parent, "data", "data.csv"))
 
 OMDB_API = "http://www.omdbapi.com/"
