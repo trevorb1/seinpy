@@ -44,6 +44,16 @@ If you need to bring the environment in sync with the `uv.lock`/`pyproject.toml`
 uv sync
 ```
 
+5. Set the `OMDB_API_KEY` environment variable 
+
+If you plan to interface with [`OMDb`](https://www.omdbapi.com/) for extracting Seinfeld Credits and Ratings, you will need to [request a free API Key](https://www.omdbapi.com/apikey.aspx) from `OMDb`. It is easiest to then set this key as an environment variable with the following: 
+
+```bash
+export OMDB_API_KEY="your_api_key_here"
+```
+
+Alternatively, you can pass the key directly into the function calls. 
+
 ### Code Contributions 
 
 1. Create a new branch 
