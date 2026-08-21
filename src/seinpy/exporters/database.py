@@ -1,10 +1,12 @@
 """Database writer."""
 
 from pathlib import Path
-from typing import List, Optional
-from sqlmodel import SQLModel, Field, Relationship, Session, create_engine
-from seinpy.base import Exporter
+from typing import Optional
+
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+
 import seinpy.schema as schema
+from seinpy.base import Exporter
 
 ###
 # Define the SQL models
@@ -13,8 +15,8 @@ import seinpy.schema as schema
 
 class Episode(SQLModel, table=True):
     episode_id: str = Field(primary_key=True)
-    episode_num: Optional[int] = None
-    episode_title: Optional[str] = None
+    episode_num: int | None = None
+    episode_title: str | None = None
 
     # define relationships
     # ie. ways to link the tables. tells sqlmodel how to connect rows across tables
@@ -28,13 +30,13 @@ class Script(SQLModel, table=True):
     episode_id: str = Field(foreign_key="episode.episode_id", primary_key=True)
     episode: Optional["Episode"] = Relationship(back_populates="script")
 
-    lines: List["ScriptLine"] = Relationship(back_populates="script")
+    lines: list["ScriptLine"] = Relationship(back_populates="script")
 
 
 class ScriptLine(SQLModel, table=True):
     # id is optional because sqlite autogenerates it because it's the primary key.
     # this is because ScriptLine is a child of Script
-    id: Optional[int] = Field(
+    id: int | None = Field(
         default=None,
         primary_key=True,
     )
@@ -42,33 +44,33 @@ class ScriptLine(SQLModel, table=True):
     speaker: str
     dialogue: str
 
-    script: Optional[Script] = Relationship(back_populates="lines")
+    script: Optional["Script"] = Relationship(back_populates="lines")
 
 
 class Rating(SQLModel, table=True):
     episode_id: str = Field(foreign_key="episode.episode_id", primary_key=True)
-    rating: Optional[float] = None
-    num_votes: Optional[int] = None
-    link: Optional[str] = None
+    rating: float | None = None
+    num_votes: int | None = None
+    link: str | None = None
 
     episode: Optional["Episode"] = Relationship(back_populates="rating")
 
 
 class Credit(SQLModel, table=True):
     episode_id: str = Field(foreign_key="episode.episode_id", primary_key=True)
-    description: Optional[str] = None
-    date: Optional[str] = None
+    description: str | None = None
+    date: str | None = None
 
     episode: Optional["Episode"] = Relationship(back_populates="credit")
-    people: List["CreditPerson"] = Relationship(back_populates="credit")
+    people: list["CreditPerson"] = Relationship(back_populates="credit")
 
 
 class CreditPerson(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     episode_id: str = Field(foreign_key="credit.episode_id", index=True)
     type: str  # writer, director, actor
     name: str
-    role: Optional[str] = None  # only for actors
+    role: str | None = None  # only for actors
 
     credit: Optional["Credit"] = Relationship(back_populates="people")
 
@@ -78,7 +80,7 @@ class CreditPerson(SQLModel, table=True):
 ###
 
 
-def insert_script(session: Session, script: Script) -> None:
+def insert_script(session: Session, script: schema.Script) -> None:
     """Insert a Pydantic Script object into the DB."""
     # Ensure Episode exists
     episode = Episode(
@@ -101,7 +103,7 @@ def insert_script(session: Session, script: Script) -> None:
         )
 
 
-def insert_rating(session: Session, rating: Rating) -> None:
+def insert_rating(session: Session, rating: schema.Rating) -> None:
     """Insert a Pydantic Rating object into the DB."""
     # Ensure Episode exists
     episode = Episode(
@@ -121,7 +123,7 @@ def insert_rating(session: Session, rating: Rating) -> None:
     session.merge(rating_row)
 
 
-def insert_credit(session: Session, credit: Credit) -> None:
+def insert_credit(session: Session, credit: schema.Credit) -> None:
     """Insert a Pydantic Credit object into the DB."""
     # Ensure Episode exists
     episode = Episode(
@@ -139,7 +141,7 @@ def insert_credit(session: Session, credit: Credit) -> None:
     session.merge(credit_row)
 
     def add_credit_people(
-        type_: str, people: List[schema.Writer | schema.Director | schema.Actor]
+        type_: str, people: list[schema.Writer | schema.Director | schema.Actor]
     ) -> None:
         if not people:
             return
@@ -172,7 +174,7 @@ class DatabaseExporter(Exporter):
             return NotImplemented
         return True
 
-    def export(self, data: List[Episode], save_path: str) -> None:
+    def export(self, data: list[schema.Episode], save_path: str) -> None:
         """Export the data to a database."""
         f = Path(save_path)
         if not f.suffix == ".db":

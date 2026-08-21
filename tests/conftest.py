@@ -1,15 +1,15 @@
-from typing import List, Union
-from pytest import fixture
 import polars as pl
-from seinpy.base import Exporter, ScriptExtractor, CreditExtractor, RatingExtractor
+from pytest import fixture
+
+from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor
 from seinpy.schema import (
     Actor,
     Credit,
     Director,
     Episode,
+    EpisodeRef,
     Rating,
     Script,
-    EpisodeRef,
     ScriptLine,
     Writer,
 )
@@ -188,9 +188,7 @@ class DummyRatingExtractor(RatingExtractor):
 
 
 class DummyExporter(Exporter):
-    def export(
-        self, data: Union[List[Episode], List[Script], List[Rating], List[Credit]]
-    ) -> None:
+    def export(self, episodes: list[Episode], save_path: str) -> None:
         return None
 
 

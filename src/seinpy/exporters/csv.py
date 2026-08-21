@@ -1,12 +1,11 @@
 """Csv writer."""
 
 from functools import reduce
-from typing import List
+
+import polars as pl
 
 from seinpy.base import Exporter
 from seinpy.schema import Credit, Episode, EpisodeRef, Rating, Script
-
-import polars as pl
 
 
 class CsvExporter(Exporter):
@@ -76,12 +75,12 @@ class CsvExporter(Exporter):
                 data[key] = [value]
         return pl.LazyFrame(data)
 
-    def convert_to_dataframe(self, episodes: List[Episode] | Episode) -> pl.LazyFrame:
+    def convert_to_dataframe(self, episodes: list[Episode] | Episode) -> pl.LazyFrame:
         """Convert the data to a dataframe."""
 
         if isinstance(episodes, Episode):
             episodes = [episodes]
-        elif isinstance(episodes, List):
+        elif isinstance(episodes, list):
             if not all(isinstance(episode, Episode) for episode in episodes):
                 raise ValueError("Data must be a list of episodes")
         else:
@@ -106,6 +105,6 @@ class CsvExporter(Exporter):
 
         return pl.concat(dfs_to_concat)
 
-    def export(self, data: List[Episode], save_path: str) -> None:
+    def export(self, data: list[Episode], save_path: str) -> None:
         df = self.convert_to_dataframe(data).collect()
         df.write_csv(save_path)

@@ -1,11 +1,13 @@
 import logging
-from seinpy.logging import (
-    configure_logging,
-    LogLevels,
-    LOG_FORMAT_DEFAULT,
-    LOG_FORMAT_DEBUG,
-)
+
 import pytest
+
+from seinpy.logging import (
+    LOG_FORMAT_DEBUG,
+    LOG_FORMAT_DEFAULT,
+    LogLevels,
+    configure_logging,
+)
 
 
 class TestLogLevels:

@@ -6,13 +6,15 @@ This API is free to use, but requires an API key.
 https://www.omdbapi.com/apikey.aspx
 """
 
-from typing import Any
-from seinpy.base import RatingExtractor
-import polars as pl
-from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
-from seinpy.constants import OMDB_API
 import logging
+from typing import Any
+
+import polars as pl
 import requests
+
+from seinpy.base import RatingExtractor
+from seinpy.constants import OMDB_API
+from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
 
 logger = logging.getLogger(__name__)
 

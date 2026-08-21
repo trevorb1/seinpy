@@ -1,7 +1,6 @@
 """Json writer."""
 
 import json
-from typing import List
 
 from seinpy.base import Exporter
 from seinpy.schema import Episode
@@ -17,11 +16,11 @@ class JsonExporter(Exporter):
         return True
 
     @staticmethod
-    def convert_to_json(episodes: List[Episode] | Episode) -> list[dict]:
+    def convert_to_json(episodes: list[Episode] | Episode) -> list[dict]:
         """Convert the data to a json string."""
         if isinstance(episodes, Episode):
             episodes = [episodes]
-        elif isinstance(episodes, List):
+        elif isinstance(episodes, list):
             if not all(isinstance(episode, Episode) for episode in episodes):
                 raise ValueError("Data must be a list of episodes")
         else:
@@ -52,7 +51,7 @@ class JsonExporter(Exporter):
 
         return all_data
 
-    def export(self, data: List[Episode], save_path: str) -> None:
+    def export(self, data: list[Episode], save_path: str) -> None:
         json_data = self.convert_to_json(data)
         with open(save_path, "w") as f:
             json.dump(json_data, f, indent=4, ensure_ascii=False)

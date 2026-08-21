@@ -1,12 +1,13 @@
 import pytest
+
 from seinpy.schema import (
-    ScriptLine,
     Actor,
-    EpisodeRef,
-    Script,
-    Rating,
     Credit,
     Episode,
+    EpisodeRef,
+    Rating,
+    Script,
+    ScriptLine,
     capitalize_name,
 )
 

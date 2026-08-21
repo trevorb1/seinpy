@@ -1,7 +1,8 @@
-import pytest
 import polars as pl
-from seinpy.scripts.empty import EmptyScriptExtractor
+import pytest
 from polars.testing import assert_frame_equal
+
+from seinpy.scripts.empty import EmptyScriptExtractor
 
 
 @pytest.fixture

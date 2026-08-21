@@ -1,7 +1,8 @@
-import pytest
 import polars as pl
-from seinpy.ratings.empty import EmptyRatingExtractor
+import pytest
 from polars.testing import assert_frame_equal
+
+from seinpy.ratings.empty import EmptyRatingExtractor
 
 
 @pytest.fixture

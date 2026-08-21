@@ -1,14 +1,14 @@
 import pytest
-from sqlmodel import SQLModel, Session, create_engine, text
-from sqlalchemy.engine import Engine
+from sqlmodel import Session, SQLModel, create_engine, text
+
 from seinpy.exporters.database import (
     DatabaseExporter,
     Episode,
-    Script,
     Rating,
-    insert_script,
-    insert_rating,
+    Script,
     insert_credit,
+    insert_rating,
+    insert_script,
 )
 
 

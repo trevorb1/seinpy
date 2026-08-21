@@ -3,21 +3,20 @@
 https://www.kaggle.com/datasets/thec03u5/seinfeld-chronicles and originates from Seinology
 """
 
+import logging
 from pathlib import Path
-
-from seinpy.constants import TWO_PART_EPISODES
-from seinpy.base import ScriptExtractor
-from seinpy.utils import (
-    filter_metadata,
-    shift_episode_ids,
-    shift_episode_nums,
-    get_episode_id_num_title,
-)
 
 import kagglehub
 import polars as pl
 
-import logging
+from seinpy.base import ScriptExtractor
+from seinpy.constants import TWO_PART_EPISODES
+from seinpy.utils import (
+    filter_metadata,
+    get_episode_id_num_title,
+    shift_episode_ids,
+    shift_episode_nums,
+)
 
 logger = logging.getLogger(__name__)
 

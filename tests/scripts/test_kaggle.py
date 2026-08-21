@@ -1,11 +1,10 @@
-import pytest
-
-from seinpy.scripts.kaggle import KaggleScriptExtractor
+from pathlib import Path
 
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
 
-from pathlib import Path
+from seinpy.scripts.kaggle import KaggleScriptExtractor
 
 TEST_DIR = Path(__file__).parent.parent.resolve()  # tests/
 

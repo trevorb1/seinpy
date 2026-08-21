@@ -3,10 +3,12 @@
 Needed for context when only one extractor is used.
 """
 
+import logging
+
+import polars as pl
+
 from seinpy.base import CreditExtractor
 from seinpy.utils import filter_metadata, get_episode_id_num_title
-import polars as pl
-import logging
 
 logger = logging.getLogger(__name__)
 

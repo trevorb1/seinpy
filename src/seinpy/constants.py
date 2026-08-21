@@ -1,5 +1,6 @@
-import polars as pl
 from pathlib import Path
+
+import polars as pl
 
 SCRIPT_EXTRACTORS = ["kaggle", "imdb", "seinfeldscripts", "seinology"]
 CREDIT_EXTRACTORS = ["omdb", "rottentomatoes"]

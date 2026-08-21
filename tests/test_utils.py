@@ -1,15 +1,16 @@
-import pytest
 import polars as pl
+import pytest
 from polars.testing import assert_frame_equal
+
 from seinpy.utils import (
-    get_episode_id_num_title,
-    get_omdb_api_key,
-    get_episode_filter_priority,
     filter_metadata,
+    get_episode_filter_priority,
+    get_episode_id_num_title,
     get_episode_ids_from_seasons,
+    get_omdb_api_key,
+    is_valid_extractors,
     shift_episode_ids,
     shift_episode_nums,
-    is_valid_extractors,
 )
 
 

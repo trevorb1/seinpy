@@ -1,7 +1,8 @@
-import pytest
 import polars as pl
-from seinpy.credits.empty import EmptyCreditExtractor
+import pytest
 from polars.testing import assert_frame_equal
+
+from seinpy.credits.empty import EmptyCreditExtractor
 
 @pytest.fixture
 def fake_df() -> pl.LazyFrame:

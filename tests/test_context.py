@@ -1,37 +1,34 @@
 import pytest
+
+from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor
 from seinpy.context import (
     Context,
-    ScriptExtractor,
-    CreditExtractor,
-    RatingExtractor,
-    Exporter,
-    read_episodes,
-    _get_script_extractor,
     _get_credit_extractor,
-    _get_rating_extractor,
     _get_exporter,
+    _get_rating_extractor,
+    _get_script_extractor,
+    read_episodes,
 )
-from seinpy.scripts.kaggle import KaggleScriptExtractor
+from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
-from seinpy.ratings.omdb import OMDBRatingExtractor
-from seinpy.exporters.database import DatabaseExporter
 from seinpy.exporters.csv import CsvExporter
+from seinpy.exporters.database import DatabaseExporter
 from seinpy.exporters.json import JsonExporter
+from seinpy.ratings.empty import EmptyRatingExtractor
+from seinpy.ratings.omdb import OMDBRatingExtractor
 from seinpy.schema import (
+    Actor,
+    Credit,
     Director,
     Episode,
-    Script,
-    Credit,
-    Rating,
     EpisodeRef,
+    Rating,
+    Script,
     ScriptLine,
-    Actor,
     Writer,
 )
 from seinpy.scripts.empty import EmptyScriptExtractor
-from seinpy.credits.empty import EmptyCreditExtractor
-from seinpy.ratings.empty import EmptyRatingExtractor
-
+from seinpy.scripts.kaggle import KaggleScriptExtractor
 
 
 @pytest.fixture

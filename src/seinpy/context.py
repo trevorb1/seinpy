@@ -1,21 +1,24 @@
 from __future__ import annotations
-from pathlib import Path
-from typing import Any, List
-import polars as pl
-from seinpy.constants import METADATA
-from seinpy.scripts.kaggle import KaggleScriptExtractor
-from seinpy.credits.omdb import OMDBCreditExtractor
-from seinpy.ratings.omdb import OMDBRatingExtractor
-from seinpy.exporters.database import DatabaseExporter
-from seinpy.exporters.csv import CsvExporter
-from seinpy.exporters.json import JsonExporter
-from seinpy.scripts.empty import EmptyScriptExtractor
-from seinpy.credits.empty import EmptyCreditExtractor
-from seinpy.ratings.empty import EmptyRatingExtractor
-from seinpy.schema import Episode
-from seinpy.base import ScriptExtractor, CreditExtractor, RatingExtractor, Exporter
-from seinpy.utils import get_episode_ids_from_seasons, is_valid_extractors
+
 import logging
+from pathlib import Path
+from typing import Any
+
+import polars as pl
+
+from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor
+from seinpy.constants import METADATA
+from seinpy.credits.empty import EmptyCreditExtractor
+from seinpy.credits.omdb import OMDBCreditExtractor
+from seinpy.exporters.csv import CsvExporter
+from seinpy.exporters.database import DatabaseExporter
+from seinpy.exporters.json import JsonExporter
+from seinpy.ratings.empty import EmptyRatingExtractor
+from seinpy.ratings.omdb import OMDBRatingExtractor
+from seinpy.schema import Episode
+from seinpy.scripts.empty import EmptyScriptExtractor
+from seinpy.scripts.kaggle import KaggleScriptExtractor
+from seinpy.utils import get_episode_ids_from_seasons, is_valid_extractors
 
 logger = logging.getLogger(__name__)
 
@@ -95,12 +98,12 @@ class Context:
 
     def _get_episodes(
         self,
-        episode_nums: int | List[int] | None = None,
-        episode_titles: str | List[str] | None = None,
-        episode_ids: str | List[str] | None = None,
-        seasons: int | List[int] | None = None,
+        episode_nums: int | list[int] | None = None,
+        episode_titles: str | list[str] | None = None,
+        episode_ids: str | list[str] | None = None,
+        seasons: int | list[int] | None = None,
         metadata: pl.LazyFrame = METADATA,
-    ) -> List[Episode]:
+    ) -> list[Episode]:
         """Assemble the episode data."""
         if episode_nums:
             logger.info(f"Reading episode numbers: {episode_nums}")
@@ -130,13 +133,13 @@ class Context:
 
     def read(
         self,
-        episode_nums: int | List[int] | None = None,
-        episode_titles: str | List[str] | None = None,
-        episode_ids: str | List[str] | None = None,
-        seasons: int | List[int] | None = None,
+        episode_nums: int | list[int] | None = None,
+        episode_titles: str | list[str] | None = None,
+        episode_ids: str | list[str] | None = None,
+        seasons: int | list[int] | None = None,
         get_all: bool = False,
         metadata: pl.LazyFrame = METADATA,
-    ) -> List[Episode]:
+    ) -> list[Episode]:
         """Read the data from the file."""
 
         if isinstance(episode_nums, int):
@@ -178,7 +181,7 @@ class Context:
 
     def write(
         self,
-        data: List[Episode],
+        data: list[Episode],
         save_path: str,
     ) -> None:
         """Export the data to a file."""
@@ -267,13 +270,13 @@ def _get_exporter(save_type: str, **kwargs: Any) -> Exporter:
 
 def read_episodes(
     source: dict[str, Any],
-    episode_ids: str | List[str] | None = None,
-    episode_nums: int | List[int] | None = None,
-    episode_titles: str | List[str] | None = None,
-    seasons: int | List[int] | None = None,
+    episode_ids: str | list[str] | None = None,
+    episode_nums: int | list[int] | None = None,
+    episode_titles: str | list[str] | None = None,
+    seasons: int | list[int] | None = None,
     get_all: bool = False,
     **kwargs: Any,
-) -> List[Episode]:
+) -> list[Episode]:
     """Read the episodes from the given source.
 
     Args:
@@ -380,7 +383,7 @@ def read_episodes(
 def write_episodes(
     save_type: str,
     save_path: str,
-    data: List[Episode],
+    data: list[Episode],
 ) -> None:
     save_path = Path(save_path)
     if save_type == "database":

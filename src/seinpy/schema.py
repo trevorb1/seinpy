@@ -1,10 +1,10 @@
 """Main data schema"""
 
-from typing_extensions import Self
-from pydantic import BaseModel, field_validator, model_validator
-from typing import List, Optional
-import re
 import logging
+import re
+from typing import Self
+
+from pydantic import BaseModel, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +25,12 @@ class ScriptLine(BaseModel):
 
 class Actor(BaseModel):
     name: str
-    role: Optional[str] = None
+    role: str | None = None
 
     @field_validator("name", "role", mode="after")
-    def _capitalize(cls, value: str) -> str:
+    def _capitalize(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
         return capitalize_name(value)
 
 
@@ -62,7 +64,7 @@ class EpisodeRef(BaseModel):
             and self.episode_title == other.episode_title
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"EpisodeRef: {self.episode_id} (Num: {self.episode_num}, Title: {self.episode_title})"
 
     def __bool__(self) -> bool:
@@ -77,7 +79,7 @@ class EpisodeRef(BaseModel):
 
     @field_validator("episode_title", mode="before")
     @classmethod
-    def _validate_episode_title(cls, value: Optional[str]) -> Optional[str]:
+    def _validate_episode_title(cls, value: str | None) -> str | None:
         """Capitalize first letter of each word, strip whitespace, and ensure period at end."""
         if value is None:
             return value
@@ -90,7 +92,7 @@ class EpisodeRef(BaseModel):
 
     @field_validator("episode_id", mode="before")
     @classmethod
-    def _validate_episode_id(cls, value: Optional[str]) -> Optional[str]:
+    def _validate_episode_id(cls, value: str | None) -> str | None:
         """Ensure episode_id is in the format 'SxxExx'."""
         if value is None:
             return value
@@ -104,7 +106,7 @@ class EpisodeRef(BaseModel):
 
 class Script(BaseModel):
     ref: EpisodeRef
-    script_lines: List[ScriptLine]
+    script_lines: list[ScriptLine]
 
 
 class Rating(BaseModel):
@@ -140,19 +142,19 @@ class Rating(BaseModel):
 
 class Credit(BaseModel):
     ref: EpisodeRef
-    description: Optional[str] = None
-    date: Optional[str] = None
-    writers: Optional[List[Writer]] = None
-    directors: Optional[List[Director]] = None
-    actors: Optional[List[Actor]] = None
+    description: str | None = None
+    date: str | None = None
+    writers: list[Writer] | None = None
+    directors: list[Director] | None = None
+    actors: list[Actor] | None = None
 
 
 class Episode(BaseModel):
     """Episode schema composed of script, rating, and credit data."""
 
-    script: Optional[Script] = None
-    rating: Optional[Rating] = None
-    credit: Optional[Credit] = None
+    script: Script | None = None
+    rating: Rating | None = None
+    credit: Credit | None = None
 
     @property
     def ref(self) -> EpisodeRef:
@@ -194,5 +196,5 @@ class Episode(BaseModel):
 
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Episode ID: {self.ref.episode_id}\nEpisode Number: {self.ref.episode_num}\nEpisode Title: {self.ref.episode_title}"

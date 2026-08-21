@@ -1,16 +1,17 @@
 """Utility functions for extractors."""
 
-from typing import List, Optional
-import os
-from typing_extensions import Any
-from seinpy.constants import (
-    METADATA,
-    SCRIPT_EXTRACTORS,
-    CREDIT_EXTRACTORS,
-    RATING_EXTRACTORS,
-)
-import polars as pl
 import logging
+import os
+from typing import Any
+
+import polars as pl
+
+from seinpy.constants import (
+    CREDIT_EXTRACTORS,
+    METADATA,
+    RATING_EXTRACTORS,
+    SCRIPT_EXTRACTORS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +30,16 @@ def get_omdb_api_key(key: str | None = None) -> str:
     """
     if key:
         return key
-    key = os.getenv("OMDB")
+    key = os.getenv("OMDB_API_KEY")
     if not key:
         raise ValueError("OMDB_API_KEY is not set")
     return key
 
 
 def get_episode_filter_priority(
-    episode_id: Optional[str] = None,
-    episode_num: Optional[int] = None,
-    episode_title: Optional[str] = None,
+    episode_id: str | None = None,
+    episode_num: int | None = None,
+    episode_title: str | None = None,
 ) -> str:
     """Get the priority episode identifier.
 
@@ -106,8 +107,8 @@ def filter_metadata(
 
 
 def get_episode_ids_from_seasons(
-    seasons: int | List[int], metadata: pl.LazyFrame = METADATA
-) -> List[str]:
+    seasons: int | list[int], metadata: pl.LazyFrame = METADATA
+) -> list[str]:
     """Get the episode ids from the seasons.
 
     Args:

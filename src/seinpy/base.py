@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import List
-import polars as pl
 import logging
+from abc import ABC, abstractmethod
+
+import polars as pl
+
 from seinpy.schema import (
     Actor,
+    Credit,
     Director,
     Episode,
     EpisodeRef,
-    Script,
     Rating,
-    Credit,
+    Script,
     ScriptLine,
     Writer,
 )
@@ -396,7 +397,7 @@ class Exporter(ABC):
     @abstractmethod
     def export(
         self,
-        episodes: List[Episode],
+        episodes: list[Episode],
         save_path: str,
     ) -> None:
         """Write the data to the file.

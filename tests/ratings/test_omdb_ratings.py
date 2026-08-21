@@ -1,8 +1,8 @@
-import pytest
 import polars as pl
-from seinpy.ratings.omdb import OMDBRatingExtractor
+import pytest
 from polars.testing import assert_frame_equal
 
+from seinpy.ratings.omdb import OMDBRatingExtractor
 from seinpy.schema import EpisodeRef, Rating
 
 
