@@ -10,14 +10,19 @@ from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtrac
 from seinpy.constants import METADATA
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
+from seinpy.credits.rottentomatoes import RottenTomatoesCreditExtractor
 from seinpy.exporters.csv import CsvExporter
 from seinpy.exporters.database import DatabaseExporter
 from seinpy.exporters.json import JsonExporter
 from seinpy.ratings.empty import EmptyRatingExtractor
 from seinpy.ratings.omdb import OMDBRatingExtractor
+from seinpy.ratings.rottentomatoes import RottenTomatoesRatingExtractor
 from seinpy.schema import Episode
 from seinpy.scripts.empty import EmptyScriptExtractor
+from seinpy.scripts.imsdb import IMDbScriptExtractor
 from seinpy.scripts.kaggle import KaggleScriptExtractor
+from seinpy.scripts.seinfeldscripts import SeinfeldScriptsExtractor
+from seinpy.scripts.seinology import SeinologyScriptExtractor
 from seinpy.utils import get_episode_ids_from_seasons, is_valid_extractors
 
 logger = logging.getLogger(__name__)
@@ -216,11 +221,11 @@ def _get_script_extractor(source: str | None, **kwargs: Any) -> ScriptExtractor:
     elif source == "kaggle":
         return KaggleScriptExtractor()
     elif source == "imdb":
-        raise NotImplementedError("IMDb source not implemented")
+        return IMDbScriptExtractor()
     elif source == "seinfeldscripts":
-        raise NotImplementedError("SeinfeldScripts source not implemented")
+        return SeinfeldScriptsExtractor()
     elif source == "seinology":
-        raise NotImplementedError("Seinology source not implemented")
+        return SeinologyScriptExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
@@ -233,7 +238,7 @@ def _get_credit_extractor(source: str | None, **kwargs: Any) -> CreditExtractor:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBCreditExtractor(omdb_api_key=omdb_api_key)
     elif source == "rottentomatoes":
-        raise NotImplementedError("Rotten Tomatoes source not implemented")
+        return RottenTomatoesCreditExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
@@ -246,7 +251,7 @@ def _get_rating_extractor(source: str | None, **kwargs: Any) -> RatingExtractor:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBRatingExtractor(omdb_api_key=omdb_api_key)
     elif source == "rottentomatoes":
-        raise NotImplementedError("Rotten Tomatoes source not implemented")
+        return RottenTomatoesRatingExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 

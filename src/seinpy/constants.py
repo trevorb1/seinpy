@@ -4,7 +4,7 @@ import polars as pl
 
 SCRIPT_EXTRACTORS = ["kaggle", "imdb", "seinfeldscripts", "seinology"]
 CREDIT_EXTRACTORS = ["omdb", "rottentomatoes"]
-RATING_EXTRACTORS = ["omdb"]
+RATING_EXTRACTORS = ["omdb", "rottentomatoes"]
 EXPORTERS = ["database", "csv", "json"]
 
 TWO_PART_EPISODES = [

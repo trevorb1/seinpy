@@ -20,7 +20,7 @@ class TestGetOmdbApiKey:
         assert get_omdb_api_key(key) == "key"
 
     def test_get_omdb_api_key_from_env(self, monkeypatch):
-        monkeypatch.setenv("OMDB", "key")
+        monkeypatch.setenv("OMDB_API_KEY", "key")
         assert get_omdb_api_key() == "key"
 
     def test_get_omdb_api_key_no_key(self):
