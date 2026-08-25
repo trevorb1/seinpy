@@ -6,7 +6,7 @@ from typing import Any
 
 import polars as pl
 
-from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor
+from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor, Source
 from seinpy.constants import METADATA
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
@@ -23,7 +23,7 @@ from seinpy.scripts.imsdb import IMDbScriptExtractor
 from seinpy.scripts.kaggle import KaggleScriptExtractor
 from seinpy.scripts.seinfeldscripts import SeinfeldScriptsExtractor
 from seinpy.scripts.seinology import SeinologyScriptExtractor
-from seinpy.utils import get_episode_ids_from_seasons, is_valid_extractors
+from seinpy.utils import get_episode_ids_from_seasons, validate_extractors
 
 logger = logging.getLogger(__name__)
 
@@ -274,7 +274,7 @@ def _get_exporter(save_type: str, **kwargs: Any) -> Exporter:
 
 
 def read_episodes(
-    source: dict[str, Any],
+    source: Source | dict[str, Any],
     episode_ids: str | list[str] | None = None,
     episode_nums: int | list[int] | None = None,
     episode_titles: str | list[str] | None = None,
@@ -285,10 +285,7 @@ def read_episodes(
     """Read the episodes from the given source.
 
     Args:
-        source: A dictionary containing the sources for the script, credit, and rating extractors.
-            "script": The source for the script extractor.
-            "credit": The source for the credit extractor.
-            "rating": The source for the rating extractor.
+        source: A Source instance or dictionary containing the configurations for the script, credit, and rating extractors.
         episode_ids: The IDs of the episodes to read.
         episode_nums: The numbers of the episodes to read.
         episode_titles: The titles of the episodes to read.
@@ -299,54 +296,39 @@ def read_episodes(
         omdb_api_key: Needed for the OMDB extractors.
 
     Returns:
-        A list of episodes.
+        A list of Episode objects.
 
-    Notes:
-    - Only one of episode_ids, episode_nums, episode_titles, or seasons needs to be provided.
-    - If get_all is True, all episodes will be read.
-    - At least one source must be provided. If any of 'script', 'credit', or 'rating' are not provided, an empty extractor will be used.
-
-    Example:
-        >>> read_episodes(source={"script": "kaggle", "credit": "omdb", "rating": "omdb"}, episode_ids=["S01E01"])
+    Examples:
+        >>> from seinpy import read_episodes, Source
+        >>> source = Source(script="kaggle")
+        >>> read_episodes(source=source, seasons=[1], episode_nums=[1])
         [
             Episode(
+                id="S01E01",
+                season=1,
+                episode_num=1,
+                episode_title="Good News, Bad News",
                 script=Script(
                     ref=EpisodeRef(
                         episode_id="S01E01",
                         episode_num=1,
-                        episode_title="Episode 1"
+                        episode_title="Good News, Bad News"
                     ),
-                    script_lines=[
-                        ScriptLine(
-                            speaker="Jerry",
-                            dialogue="Hi, I'm Jerry."
-                        ),
-                        ScriptLine(
-                            speaker="George",
-                            dialogue="Hi, I'm George."
-                        ),
-                        ...
-                    )],
+                    lines=[
+                        ScriptLine(speaker="Jerry", dialogue="It's a good news, bad news scenario...")
+                    ]
+                ),
                 credit=Credit(
                     ref=EpisodeRef(
                         episode_id="S01E01",
                         episode_num=1,
-                        episode_title="Episode 1"
+                        episode_title="Good News, Bad News"
                     ),
-                    description="Seinfeld is literally a show about nothing.",
-                    date="2025-01-01",
-                    writers=[
-                        Writer(name="Larry David"),
-                        Writer(name="Jerry Seinfeld")
-                    ],
-                    directors=[
-                        Director(name="Jerry Seinfeld"),
-                        Director(name="Larry David")
-                    ],
+                    writers=[Writer(name="Larry David"), Writer(name="Jerry Seinfeld")],
+                    directors=[Director(name="Art Wolff")],
                     actors=[
                         Actor(name="Jerry Seinfeld", role="Jerry"),
                         Actor(name="Jason Alexander", role="George"),
-                        Actor(name="Julia Louis-Dreyfus", role="Elaine"),
                         Actor(name="Michael Richards", role="Kramer")
                     ]
                 ),
@@ -354,7 +336,7 @@ def read_episodes(
                     ref=EpisodeRef(
                         episode_id="S01E01",
                         episode_num=1,
-                        episode_title="Episode 1"
+                        episode_title="Good News, Bad News"
                     ),
                     rating=10,
                     num_votes=100,
@@ -364,16 +346,16 @@ def read_episodes(
         ]
     """
 
-    assert is_valid_extractors(source)
+    source = validate_extractors(source)
 
-    script = _get_script_extractor(source.get("script", None), **kwargs)
-    credit = _get_credit_extractor(source.get("credit", None), **kwargs)
-    rating = _get_rating_extractor(source.get("rating", None), **kwargs)
+    script = _get_script_extractor(source.script, **kwargs)
+    credit = _get_credit_extractor(source.credit, **kwargs)
+    rating = _get_rating_extractor(source.rating, **kwargs)
     context = Context(
         script_extractor=script, credit_extractor=credit, rating_extractor=rating
     )
 
-    metadata = kwargs.get("metadata", METADATA)  # jsut for tests
+    metadata = kwargs.get("metadata", METADATA)  # just for tests
 
     return context.read(
         episode_ids=episode_ids,

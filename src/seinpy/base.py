@@ -1,6 +1,7 @@
 """Base classes for extractors and writers."""
 
 from __future__ import annotations
+from dataclasses import dataclass
 
 import logging
 from abc import ABC, abstractmethod
@@ -239,13 +240,17 @@ class RatingExtractor(ABC):
         episode_num = df.select("episode_num").unique().item()
         episode_title = df.select("episode_title").unique().item()
 
+        # Convert empty strings to None to represent missing rating/vote data.
+        # Correction to default zero values is handled by Pydantic validation.
         try:
-            rating = float(df.select("rating").unique().item())
+            val = df.select("rating").unique().item()
+            rating = float(val) if val not in (None, "") else None
         except pl.exceptions.ColumnNotFoundError:
             rating = None
 
         try:
-            num_votes = int(df.select("num_votes").unique().item())
+            val = df.select("num_votes").unique().item()
+            num_votes = int(val) if val not in (None, "") else None
         except pl.exceptions.ColumnNotFoundError:
             num_votes = None
 
@@ -407,3 +412,19 @@ class Exporter(ABC):
             save_path: The path to save the data to.
         """
         raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class Source:
+    """Configuration class specifying the extractor sources to use.
+
+    Attributes:
+        script: The source name for the script extractor (e.g. "kaggle", "seinology", etc.).
+        credit: The source name for the credits extractor, defaults to None.
+        rating: The source name for the ratings extractor, defaults to None.
+    """
+
+    script: str
+    credit: str | None = None
+    rating: str | None = None
+

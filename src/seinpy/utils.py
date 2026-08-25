@@ -6,6 +6,7 @@ from typing import Any
 
 import polars as pl
 
+from seinpy.base import Source
 from seinpy.constants import (
     CREDIT_EXTRACTORS,
     METADATA,
@@ -248,16 +249,77 @@ def get_episode_id_num_title(
     return episode_id, episode_num, episode_title
 
 
-def is_valid_extractors(source: dict[str, Any]) -> bool:
-    """Check if the extractors are valid."""
+def _configure_dict_source(
+    source: dict[str, Any]
+) -> tuple[str | None, str | None, str | None] | None:
+    """Configure dictionary source keys and extract the extractor names.
 
-    if not isinstance(source, dict):
-        example = {"script": "xxx", "credit": "xxx", "rating": "xxx"}
-        raise ValueError(f"Source must be a dictionary in the form {example}")
+    Args:
+        source: The dictionary source configuration.
 
-    script_extractor = source.get("script", None)
-    credit_extractor = source.get("credit", None)
-    rating_extractor = source.get("rating", None)
+    Returns:
+        A tuple of (script, credit, rating) extractor names if valid, None otherwise.
+    """
+    for key, value in source.items():
+        if value is not None and key not in ["script", "credit", "rating"]:
+            logger.warning(
+                f"Invalid extractor: {key}. Must be one of 'script', 'credit', or 'rating'."
+            )
+            return None
+
+    return (
+        source.get("script", None),
+        source.get("credit", None),
+        source.get("rating", None),
+    )
+
+
+
+def validate_extractors(source: Source | dict[str, Any]) -> Source:
+    """Validate extractors and return a Source dataclass.
+
+    Args:
+        source: The Source configuration to validate (either a Source instance or dictionary).
+
+    Returns:
+        A validated Source instance.
+
+    Raises:
+        ValueError: If the source type is invalid.
+        AssertionError: If any of the extractors are invalid.
+    """
+    if isinstance(source, dict):
+        extractors = _configure_dict_source(source)
+        if extractors is None:
+            raise ValueError("Invalid extractor source dictionary structure")
+        script_extractor, credit_extractor, rating_extractor = extractors
+        cleaned_source = Source(
+            script=script_extractor,
+            credit=credit_extractor,
+            rating=rating_extractor,
+        )
+    elif isinstance(source, Source):
+        cleaned_source = source
+    else:
+        raise ValueError("Source must be an instance of Source or a dictionary")
+
+    if not _is_valid_extractors(cleaned_source):
+        raise ValueError("Invalid extractor configuration")
+    return cleaned_source
+
+
+def _is_valid_extractors(source: Source) -> bool:
+    """Check if the extractors are valid.
+
+    Args:
+        source: The Source configuration to validate.
+
+    Returns:
+        True if all specified extractors are valid, False otherwise.
+    """
+    script_extractor = source.script
+    credit_extractor = source.credit
+    rating_extractor = source.rating
 
     if script_extractor and script_extractor not in SCRIPT_EXTRACTORS:
         logger.warning(
@@ -275,12 +337,22 @@ def is_valid_extractors(source: dict[str, Any]) -> bool:
         )
         return False
 
-    for key, value in source.items():
-        if value is not None:
-            if key not in ["script", "credit", "rating"]:
-                logger.warning(
-                    f"Invalid extractor: {key}. Must be one of 'script', 'credit', or 'rating'."
-                )
-                return False
-
     return True
+
+
+def is_valid_extractors(source: Source | dict[str, Any]) -> bool:
+    """Check if the extractors are valid.
+
+    Args:
+        source: The Source configuration to validate (either a Source instance or dictionary).
+
+    Returns:
+        True if all specified extractors are valid, False otherwise.
+    """
+    if not isinstance(source, (Source, dict)):
+        raise ValueError("Source must be an instance of Source or a dictionary")
+    try:
+        validate_extractors(source)
+        return True
+    except ValueError:
+        return False

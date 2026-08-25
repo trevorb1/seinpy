@@ -282,25 +282,25 @@ class TestGetExporter:
 class TestReadEpisodes:
     def test_invalid_source(self):
         source = {"invalid_key": "value"}
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             read_episodes(source=source)
 
     def test_invalid_script_extractor(self):
         """Test that read_episodes raises AssertionError for invalid script extractor."""
         source = {"script": "invalid_script"}
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             read_episodes(source=source)
 
     def test_invalid_credit_extractor(self):
         """Test that read_episodes raises AssertionError for invalid credit extractor."""
         source = {"credit": "invalid_credit"}
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             read_episodes(source=source)
 
     def test_invalid_rating_extractor(self):
         """Test that read_episodes raises AssertionError for invalid rating extractor."""
         source = {"rating": "invalid_rating"}
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             read_episodes(source=source)
 
     def test_read_episode(

@@ -23,7 +23,8 @@ class TestGetOmdbApiKey:
         monkeypatch.setenv("OMDB_API_KEY", "key")
         assert get_omdb_api_key() == "key"
 
-    def test_get_omdb_api_key_no_key(self):
+    def test_get_omdb_api_key_no_key(self, monkeypatch):
+        monkeypatch.delenv("OMDB_API_KEY", raising=False)
         with pytest.raises(ValueError):
             get_omdb_api_key()
 
@@ -278,3 +279,11 @@ class TestIsValidExtractors:
     def test_is_valid_extractors_not_a_dict(self):
         with pytest.raises(ValueError):
             is_valid_extractors("kaggle")
+
+    def test_is_valid_extractors_source_dataclass(self):
+        from seinpy.base import Source
+        source = Source(script="kaggle", credit="omdb", rating="omdb")
+        assert is_valid_extractors(source) is True
+
+        source = Source(script="invalid_script")
+        assert is_valid_extractors(source) is False
