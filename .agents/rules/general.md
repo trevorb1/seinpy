@@ -22,4 +22,9 @@ These are general guidelines for working on the `seinpy` repository.
 ## Python packages 
 - Use polars where possible instead of pandas 
 - Do not add a new dependency without getting permission from me first 
-- Use UV for dependency management. 
+- Use UV for dependency management.
+
+## Documentation 
+- Use the MKDocs theme.
+- Keep API docs seperate from reference documentation.
+- Embed examples where applicable. 
