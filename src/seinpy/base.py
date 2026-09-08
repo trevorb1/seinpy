@@ -1,0 +1,430 @@
+"""Base classes for extractors and writers."""
+
+from __future__ import annotations
+from dataclasses import dataclass
+
+import logging
+from abc import ABC, abstractmethod
+
+import polars as pl
+
+from seinpy.schema import (
+    Actor,
+    Credit,
+    Director,
+    Episode,
+    EpisodeRef,
+    Rating,
+    Script,
+    ScriptLine,
+    Writer,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class ScriptExtractor(ABC):
+    """Base strategy class for script extractors."""
+
+    def extract(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+        as_df: bool = False,
+    ) -> Script | pl.DataFrame:
+        """Extract script data from the given episode.
+
+        Args:
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+            episode_id: The id of the episode to extract.
+            as_df: Whether to return a dataframe or a Script object.
+
+        Returns:
+            A Script object or a dataframe.
+
+        Raises:
+            ValueError: If the episode does not exist.
+
+        Notes:
+            - Only need to provide one of episode_num, episode_title, or episode_id.
+            - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        df = self.extract_script(episode_id, episode_num, episode_title)
+        if as_df:
+            return df.collect()
+        return self._df_to_script(df)
+
+    @abstractmethod
+    def extract_script(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the script from the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            The script dataframe.
+
+        Raises:
+            ValueError: If no episode_id, episode_num, or episode_title is provided.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _df_to_script(df: pl.LazyFrame) -> Script:
+        """Convert a dataframe to a script.
+
+        Args:
+            df: The dataframe to convert.
+
+        Returns:
+            A script object.
+        """
+        df = df.collect()  # materialize the dataframe once
+
+        episode_id = df.select("episode_id").unique().item()
+        episode_num = df.select("episode_num").unique().item()
+        episode_title = df.select("episode_title").unique().item()
+        ref = EpisodeRef(
+            episode_id=episode_id, episode_num=episode_num, episode_title=episode_title
+        )
+
+        lines = list(zip(df["speaker"].to_list(), df["dialogue"].to_list()))
+        script_lines = [ScriptLine(speaker=line[0], dialogue=line[1]) for line in lines]
+
+        return Script(ref=ref, script_lines=script_lines)
+
+    @staticmethod
+    def _convert_episodeid_to_episodenum(df: pl.LazyFrame) -> pl.LazyFrame:
+        """Convert the episode id to the episode number.
+
+        Args:
+            df: The dataframe to convert.
+
+        This function will convert the episode_id column to a new episode_number col.
+        The episode_id is in the format "S01E04", so the function will return 4.
+        If the episode_num column already exists, it will be dropped and replaced.
+        """
+        ranked = (
+            df.select("episode_id")
+            .unique()
+            .sort("episode_id")
+            .with_row_index(name="episode_num", offset=1)
+        )
+        if "episode_num" in df.collect_schema().names():
+            return df.drop("episode_num").join(ranked, on="episode_id", how="left")
+        else:
+            return df.join(ranked, on="episode_id", how="left")
+
+    @staticmethod
+    def _is_one_episode(df: pl.LazyFrame) -> bool:
+        """Check that only one episode is found.
+
+        Args:
+            df: The dataframe to check.
+        """
+        cols = df.collect_schema().names()
+        if not all(
+            col in cols for col in ["episode_id", "episode_num", "episode_title"]
+        ):
+            logger.error(
+                f"Missing columns. Expected: ['episode_id', 'episode_num', 'episode_title'] and found: {cols}"
+            )
+            return False
+
+        unique_counts = df.select(
+            [
+                pl.col("episode_id").n_unique(),
+                pl.col("episode_num").n_unique(),
+                pl.col("episode_title").n_unique(),
+            ]
+        ).collect()
+
+        if any(count != 1 for count in unique_counts.row(0)):
+            logger.error(f"Unique counts: {unique_counts}")
+            logger.error("Multiple episodes found - episode identifiers are not unique")
+            return False
+        return True
+
+    @staticmethod
+    def _coordinate_columns(df: pl.LazyFrame) -> pl.LazyFrame:
+        """Coordinate the columns of the dataframe.
+
+        Args:
+            df: The dataframe to coordinate.
+        """
+        if not all(
+            col in df.collect_schema().names()
+            for col in [
+                "episode_num",
+                "episode_title",
+                "episode_id",
+                "speaker",
+                "dialogue",
+            ]
+        ):
+            raise ValueError("Columns are not coordinated")
+        return df.select(
+            ["episode_num", "episode_title", "episode_id", "speaker", "dialogue"]
+        )
+
+
+class RatingExtractor(ABC):
+    """Base strategy class for rating extractors."""
+
+    def extract(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+        as_df: bool = False,
+    ) -> Rating | pl.DataFrame:
+        """Extract rating data from the given episode.
+
+        Args:
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+            episode_id: The id of the episode to extract.
+            as_df: Whether to return a dataframe or a Rating object.
+
+        Returns:
+            A Rating object or a dataframe.
+
+        Raises:
+            ValueError: If the episode does not exist.
+
+        Notes:
+            - Only need to provide one of episode_num, episode_title, or episode_id.
+            - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        data = self.extract_rating(episode_id, episode_num, episode_title)
+        if as_df:
+            return data
+        return self._df_to_rating(data)
+
+    @abstractmethod
+    def extract_rating(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the rating from the given episode.
+
+        Extract the rating for the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            A dataframe with the rating for the given episode.
+        """
+        raise NotImplementedError
+
+    def _df_to_rating(self, df: pl.LazyFrame) -> Rating:
+        """Convert a dataframe to a rating."""
+
+        df = df.collect()  # materialize the dataframe once
+
+        episode_id = df.select("episode_id").unique().item()
+        episode_num = df.select("episode_num").unique().item()
+        episode_title = df.select("episode_title").unique().item()
+
+        # Convert empty strings to None to represent missing rating/vote data.
+        # Correction to default zero values is handled by Pydantic validation.
+        try:
+            val = df.select("rating").unique().item()
+            rating = float(val) if val not in (None, "") else None
+        except pl.exceptions.ColumnNotFoundError:
+            rating = None
+
+        try:
+            val = df.select("num_votes").unique().item()
+            num_votes = int(val) if val not in (None, "") else None
+        except pl.exceptions.ColumnNotFoundError:
+            num_votes = None
+
+        try:
+            link = df.select("link").unique().item()
+        except pl.exceptions.ColumnNotFoundError:
+            link = None
+
+        logger.debug(f"Rating: {rating}")
+        logger.debug(f"Num Votes: {num_votes}")
+        logger.debug(f"Link: {link}")
+        logger.debug(f"Episode ID: {episode_id}")
+        logger.debug(f"Episode Num: {episode_num}")
+        logger.debug(f"Episode Title: {episode_title}")
+
+        return Rating(
+            ref=EpisodeRef(
+                episode_id=episode_id,
+                episode_num=episode_num,
+                episode_title=episode_title,
+            ),
+            rating=rating,
+            num_votes=num_votes,
+            link=link,
+        )
+
+
+class CreditExtractor(ABC):
+    """Base strategy class for credit extractors."""
+
+    def extract(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+        as_df: bool = False,
+    ) -> Credit | pl.DataFrame:
+        """Extract credit data from the given episode.
+
+        Args:
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+            episode_id: The id of the episode to extract.
+            as_df: Whether to return a dataframe or a Credit object.
+
+        Returns:
+            A Credit object.
+
+        Raises:
+            ValueError: If the episode does not exist.
+
+        Notes:
+            - Only need to provide one of episode_num, episode_title, or episode_id.
+            - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
+        """
+        data = self.extract_credit(episode_id, episode_num, episode_title)
+        if as_df:
+            return data.collect()
+        return self._df_to_credits(data)
+
+    @abstractmethod
+    def extract_credit(
+        self,
+        episode_id: str | None = None,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+    ) -> pl.LazyFrame:
+        """Extract the credit from the given episode.
+
+        Args:
+            episode_id: The id of the episode to extract.
+            episode_num: The number of the episode to extract.
+            episode_title: The title of the episode to extract.
+
+        Returns:
+            A dataframe with the credit for the given episode.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def _df_to_credits(df: pl.LazyFrame) -> Credit:
+        """Convert a dataframe to a credit."""
+
+        df = df.collect()  # materialize the dataframe once
+
+        if len(df) > 1:
+            raise ValueError("Multiple episodes found")
+
+        try:
+            actor_plus_roles = [
+                x.strip() for x in df.select("actors").item().split(";")
+            ]
+
+            actors = []
+            for actor_plus_role in actor_plus_roles:
+                actor = actor_plus_role.split("|")
+                if len(actor) == 2:
+                    actors.append(Actor(name=actor[0], role=actor[1]))
+                else:
+                    actors.append(Actor(name=actor[0]))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No actors found")
+            actors = []
+
+        try:
+            writers = []
+            for writer in df.select("writer").item().split(";"):
+                writers.append(Writer(name=writer))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No writers found")
+            writers = []
+
+        try:
+            directors = []
+            for director in df.select("director").item().split(";"):
+                directors.append(Director(name=director))
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No directors found")
+            directors = []
+
+        try:
+            date = df.select("date").item()
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No date found")
+            date = ""
+
+        try:
+            description = df.select("description").item()
+        except pl.exceptions.ColumnNotFoundError:
+            logger.debug("No description found")
+            description = ""
+
+        return Credit(
+            ref=EpisodeRef(
+                episode_id=df.select("episode_id").item(),
+                episode_num=df.select("episode_num").item(),
+                episode_title=df.select("episode_title").item(),
+            ),
+            description=description,
+            date=date,
+            writers=writers,
+            directors=directors,
+            actors=actors,
+        )
+
+class Exporter(ABC):
+    """Base strategy class for all writers."""
+
+    @abstractmethod
+    def export(
+        self,
+        episodes: list[Episode],
+        save_path: str,
+    ) -> None:
+        """Write the data to the file.
+
+        Args:
+            data: The data to write (episodes, scripts, ratings, or credits).
+            save_path: The path to save the data to.
+        """
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class Source:
+    """Configuration class specifying the extractor sources to use.
+
+    Attributes:
+        script: The source name for the script extractor (e.g. "kaggle", "seinology", etc.).
+        credit: The source name for the credits extractor, defaults to None.
+        rating: The source name for the ratings extractor, defaults to None.
+    """
+
+    script: str
+    credit: str | None = None
+    rating: str | None = None
+

@@ -1,0 +1,40 @@
+[project]
+name = "seinpy"
+version = "0.1.0"
+description = "Seinfeld Script Database"
+readme = "README.md"
+authors = [
+    { name = "trevorb1", email = "trevor_barnes@sfu.ca" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "kagglehub>=1.0.0",
+    "polars>=1.31.0",
+    "pydantic>=2.11.7",
+    "requests>=2.32.4",
+    "sqlmodel>=0.0.27",
+]
+
+[project.scripts]
+seinpy = "seinpy:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "marimo>=0.23.14",
+    "pytest>=8.4.1",
+    "pytest-cov>=7.0.0",
+]
+docs = [
+    "mkdocs>=1.6.0",
+    "mkdocs-material>=9.5.34",
+    "mkdocstrings[python]>=0.25.2",
+]
