@@ -7,86 +7,25 @@
 1. Extracting Seinfeld data into standard data structures.
 2. Exporting Seinfeld data from these standard data structures.
 
-## Development
+## Installation
 
-Development covers how to install and contribute to `seinpy`.
+Detailed step-by-step setup and environment configuration are available in the [Installation Guide](docs/installation.md).
 
-### Installation 
-
-1. If you don’t already have `uv` installed, and are using macOS or Linux, install it with:
+For quick setup using `uv`:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Or see the official [uv installation](https://docs.astral.sh/uv/getting-started/installation/) guide for platform-specific options.
-
-2. Fork and clone the repository 
-
-```bash
-https://github.com/trevorb1/seinpy.git
+# Clone the repository
+git clone https://github.com/trevorb1/seinpy.git
 cd seinpy
-```
 
-3. Create and Activate the Environment with `uv`
-
-```bash 
-uv venv
-source .venv/bin/activate   # on macOS/Linux
-.venv\Scripts\activate      # on Windows (PowerShell: .venv\Scripts\Activate.ps1)
-```
-
-4. (Optional) Sync Environment
-
-If you need to bring the environment in sync with the `uv.lock`/`pyproject.toml` file, run the folling command. 
-
-```bash 
+# Sync dependencies and activate environment
 uv sync
 ```
 
-5. Set the `OMDB_API_KEY` environment variable 
+## Code Contributions
 
-If you plan to interface with [`OMDb`](https://www.omdbapi.com/) for extracting Seinfeld Credits and Ratings, you will need to [request a free API Key](https://www.omdbapi.com/apikey.aspx) from `OMDb`. It is easiest to then set this key as an environment variable with the following: 
+For guidelines on how to set up the repository for development, run tests, and submit code changes, please refer to the [Contributing Guide](docs/contributing.md) in the documentation site.
 
-```bash
-export OMDB_API_KEY="your_api_key_here"
-```
-
-Alternatively, you can pass the key directly into the function calls. 
-
-### Code Contributions 
-
-1. Create a new branch 
-
-```bash 
-git checkout -b feature-branch 
-```
-
-2. Make code changes and add tests if required 
-
-3. Run tests
-
-```bash 
-uv run pytest
-```
-
-Additionally, you can view a full coverage report with 
-
-```bash 
-uv run pytest --cov=seinpy tests/ --cov-report=term-missing
-```
-
-4. Install and Run Pre-Commit Hooks 
-
-```bash 
-uv run pre-commit install
-```
-
-5. Push changes and lauch a pull request
-
-```bash 
-uv run pre-commit install
-```
 
 
 
