@@ -13,7 +13,13 @@ from seinpy.base import (
     ScriptExtractor,
     Source,
 )
-from seinpy.constants import METADATA
+from seinpy.constants import (
+    METADATA,
+    CreditSource,
+    ExporterType,
+    RatingSource,
+    ScriptSource,
+)
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
 from seinpy.credits.rottentomatoes import RottenTomatoesCreditExtractor
@@ -274,55 +280,61 @@ class Context:
 ################################################
 
 
-def _get_script_extractor(source: str | None, **kwargs: Any) -> ScriptExtractor:
+def _get_script_extractor(
+    source: ScriptSource | str | None, **kwargs: Any
+) -> ScriptExtractor:
     """Get the script extractor for the given source."""
     if source is None or source == "empty":
         return EmptyScriptExtractor()
-    elif source == "kaggle":
+    elif source == ScriptSource.KAGGLE:
         return KaggleScriptExtractor()
-    elif source == "imdb":
+    elif source == ScriptSource.IMDB:
         return IMDbScriptExtractor()
-    elif source == "seinfeldscripts":
+    elif source == ScriptSource.SEINFELDSCRIPTS:
         return SeinfeldScriptsExtractor()
-    elif source == "seinology":
+    elif source == ScriptSource.SEINOLOGY:
         return SeinologyScriptExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_credit_extractor(source: str | None, **kwargs: Any) -> CreditExtractor:
+def _get_credit_extractor(
+    source: CreditSource | str | None, **kwargs: Any
+) -> CreditExtractor:
     """Get the credit extractor for the given source."""
     if source is None or source == "empty":
         return EmptyCreditExtractor()
-    elif source == "omdb":
+    elif source == CreditSource.OMDB:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBCreditExtractor(omdb_api_key=omdb_api_key)
-    elif source == "rottentomatoes":
+    elif source == CreditSource.ROTTENTOMATOES:
         return RottenTomatoesCreditExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_rating_extractor(source: str | None, **kwargs: Any) -> RatingExtractor:
+def _get_rating_extractor(
+    source: RatingSource | str | None, **kwargs: Any
+) -> RatingExtractor:
     """Get the rating extractor for the given source."""
     if source is None or source == "empty":
         return EmptyRatingExtractor()
-    elif source == "omdb":
+    elif source == RatingSource.OMDB:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBRatingExtractor(omdb_api_key=omdb_api_key)
-    elif source == "rottentomatoes":
+    elif source == RatingSource.ROTTENTOMATOES:
         return RottenTomatoesRatingExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_exporter(save_type: str, **kwargs: Any) -> Exporter:
+def _get_exporter(save_type: ExporterType | str, **kwargs: Any) -> Exporter:
     """Get the exporter for the given save type."""
-    if save_type == "database":
+    if save_type == ExporterType.DATABASE:
         return DatabaseExporter(**kwargs)
-    elif save_type == "csv":
+    elif save_type == ExporterType.CSV:
         return CsvExporter(**kwargs)
-    elif save_type == "json":
+    elif save_type == ExporterType.JSON:
         return JsonExporter(**kwargs)
     else:
         raise ValueError(f"Invalid save type: {save_type}")
@@ -428,7 +440,7 @@ def read_episodes(
 
 
 def write_episodes(
-    save_type: str,
+    save_type: ExporterType | str,
     save_path: str,
     data: list[Episode],
 ) -> None:
@@ -436,19 +448,19 @@ def write_episodes(
 
     Args:
         save_type: The format or target storage type. Supported values are
-            "database", "csv", or "json".
+            ExporterType members or strings.
         save_path: The file path where the exported episodes will be saved.
             Must end with the corresponding file extension (.db, .csv, or .json).
         data: A list of Episode objects to export.
     """
     save_path = Path(save_path)
-    if save_type == "database":
+    if save_type == ExporterType.DATABASE:
         if save_path.suffix != ".db":
             raise ValueError("Save path must end with .db")
-    elif save_type == "csv":
+    elif save_type == ExporterType.CSV:
         if save_path.suffix != ".csv":
             raise ValueError("Save path must end with .csv")
-    elif save_type == "json":
+    elif save_type == ExporterType.JSON:
         if save_path.suffix != ".json":
             raise ValueError("Save path must end with .json")
     else:

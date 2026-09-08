@@ -1,13 +1,14 @@
 """Base classes for extractors and writers."""
 
 from __future__ import annotations
-from dataclasses import dataclass
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import polars as pl
 
+from seinpy.constants import CreditSource, RatingSource, ScriptSource
 from seinpy.schema import (
     Actor,
     Credit,
@@ -414,6 +415,7 @@ class CreditExtractor(ABC):
             actors=actors,
         )
 
+
 class Exporter(ABC):
     """Base strategy class for all writers."""
 
@@ -442,7 +444,6 @@ class Source:
         rating: The source name for the ratings extractor, defaults to None.
     """
 
-    script: str
-    credit: str | None = None
-    rating: str | None = None
-
+    script: ScriptSource | str
+    credit: CreditSource | str | None = None
+    rating: RatingSource | str | None = None
