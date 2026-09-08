@@ -188,8 +188,29 @@ class DummyRatingExtractor(RatingExtractor):
 
 
 class DummyExporter(Exporter):
-    def export(self, episodes: list[Episode], save_path: str) -> None:
-        return None
+    """Dummy exporter strategy for testing."""
+
+    def __init__(self) -> None:
+        """Initialize DummyExporter with tracking attributes."""
+        self.exported_data: list[Episode] | None = None
+        self.exported_save_path: str | None = None
+
+    def export(
+        self,
+        episodes: list[Episode] | None = None,
+        save_path: str = "",
+        data: list[Episode] | None = None,
+    ) -> None:
+        """Export episodes data to save path.
+
+        Args:
+            episodes: Optional list of episodes.
+            save_path: Destination file path.
+            data: Optional list of episodes passed via keyword.
+        """
+        self.exported_data = data if data is not None else episodes
+        self.exported_save_path = save_path
+
 
 
 @fixture

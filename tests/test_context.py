@@ -8,6 +8,7 @@ from seinpy.context import (
     _get_rating_extractor,
     _get_script_extractor,
     read_episodes,
+    write_episodes,
 )
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
@@ -219,6 +220,20 @@ class TestContext:
         expected = self.expected_episode
         assert len(actual) == 5  # length of metadata for all seasons
         assert actual[0] == expected
+
+    def test_write(self, context):
+        """Test writing episodes using the configured exporter."""
+        episodes = [self.expected_episode]
+        context.write(data=episodes, save_path="dummy.csv")
+        assert context.exporter.exported_data == episodes
+        assert context.exporter.exported_save_path == "dummy.csv"
+
+    def test_write_no_exporter(self, context):
+        """Test that write raises ValueError when exporter is None."""
+        context.exporter = None
+        with pytest.raises(ValueError, match="Must provide an exporter"):
+            context.write(data=[self.expected_episode], save_path="dummy.csv")
+
 
 
 class TestGetScriptExtractor:
@@ -545,3 +560,60 @@ class TestReadEpisodes:
         )
         expected = [TestContext.expected_episode]
         assert actual == expected
+
+
+class TestWriteEpisodes:
+    """Tests for the write_episodes function."""
+
+    @pytest.mark.parametrize(
+        ("save_type", "save_path", "exporter_cls"),
+        [
+            ("database", "episodes.db", DatabaseExporter),
+            ("csv", "episodes.csv", CsvExporter),
+            ("json", "episodes.json", JsonExporter),
+        ],
+    )
+    def test_write_episodes_success(
+        self,
+        monkeypatch,
+        save_type,
+        save_path,
+        exporter_cls,
+    ):
+        """Test successful export with valid save type and path."""
+        recorded = {}
+
+        def mock_export(self, data, path):
+            recorded["data"] = data
+            recorded["path"] = path
+
+        monkeypatch.setattr(exporter_cls, "export", mock_export)
+
+        episodes = [TestContext.expected_episode]
+        write_episodes(save_type=save_type, save_path=save_path, data=episodes)
+
+        assert recorded["data"] == episodes
+        assert str(recorded["path"]) == save_path
+
+    @pytest.mark.parametrize(
+        ("save_type", "save_path"),
+        [
+            ("database", "output.csv"),
+            ("csv", "output.db"),
+            ("json", "output.csv"),
+            ("parquet", "output.parquet"),
+        ],
+    )
+    def test_invalid_save_type_or_extension(
+        self,
+        save_type,
+        save_path,
+    ):
+        """Test that write_episodes raises ValueError for invalid extension or save type."""
+        with pytest.raises(ValueError):
+            write_episodes(
+                save_type=save_type,
+                save_path=save_path,
+                data=[TestContext.expected_episode],
+            )
+

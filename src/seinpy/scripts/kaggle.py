@@ -162,6 +162,62 @@ class KaggleScriptExtractor(ScriptExtractor):
             .pipe(self._correct_script_pilot_episode_id)
         )
 
+    def _correct_script_pilot_episode_id(self, df: pl.LazyFrame) -> pl.LazyFrame:
+        """Corrects the episode ID and number for the scripts.
+
+        The pilot episode and next episode from this dataset are both S01E01.
+        This function splits them and adjusts the episode IDs and numbers accordingly.
+
+        Args:
+            df: The script dataframe to adjust.
+
+        Returns:
+            The adjusted script dataframe.
+        """
+        # Add a cumulative count to split on line number 
+        df = df.with_columns(
+            (pl.col("episode_id") == "S01E01").cum_sum().alias("s1e1_count")
+        )
+        df = self._extract_season_and_episode(df)
+
+        # In the full dataset S01E01 has 557 lines and the
+        # pilot is the first PILOT_SCRIPT_LINE_COUNT lines. For smaller
+        # subsets/mock fixtures, split in half.
+        split_idx = (
+            pl.when(pl.col("s1e1_count").max() > PILOT_SCRIPT_LINE_COUNT)
+            .then(PILOT_SCRIPT_LINE_COUNT)
+            .otherwise(pl.col("s1e1_count").max() // 2)
+        )
+
+        # Set pilot episode numbers to 0
+        df = df.with_columns(
+            [
+                pl.when(
+                    (pl.col("season_num") == 1)
+                    & (pl.col("s1e1_count") <= split_idx)
+                )
+                .then(0)
+                .otherwise(pl.col("ep_num"))
+                .alias("ep_num"),
+                pl.when(
+                    (pl.col("season_num") == 1)
+                    & (pl.col("s1e1_count") <= split_idx)
+                )
+                .then(0)
+                .otherwise(pl.col("episode_num"))
+                .alias("episode_num"),
+            ]
+        )
+
+        # Increment episode number by 1 for all Season 1 episodes
+        df = self._increment_season_one_num(df)
+
+        # Increment episode ID by 1 for all Season 1 episodes
+        df = self._increment_season_one_id(df)
+
+        # Drop temporary columns
+        return df.drop(["s1e1_count", "season_num", "ep_num"])
+
     ###
     # Info processing
     ###
@@ -184,8 +240,39 @@ class KaggleScriptExtractor(ScriptExtractor):
                     "Title": "episode_title",
                 }
             )
-            .pipe(self._correct_pilot_episode_id)  # adjust pilot episode
+            .pipe(self._correct_info_pilot_episode_id)
             .pipe(self._adjust_episode_num)
+        )
+
+    def _correct_info_pilot_episode_id(self, df: pl.LazyFrame) -> pl.LazyFrame:
+        """Corrects the episode id.
+
+        The pilot episode and next episode from this dataset are both S01E01.
+        This function indexes all season one eisodes by 1 with the exception 
+        of the pilot.
+
+        Args:
+            df: The dataframe to adjust.
+
+        Returns:
+            The adjusted dataframe.
+        """
+
+        cols = pl.LazyFrame.collect_schema(df).names()
+
+        # temporary columns
+        df = self._extract_season_and_episode(df)
+
+        # increment only for season 1
+        df = self._increment_season_one_id(df)
+        df = df.select(cols)
+
+        # reset the episode_id for the pilot: "Good News, Bad News"
+        return df.with_columns(
+            pl.when(pl.col("episode_title") == pl.lit("Good News, Bad News"))
+            .then(pl.lit("S01E01"))
+            .otherwise(pl.col("episode_id"))
+            .alias("episode_id")
         )
 
     ###
@@ -300,37 +387,6 @@ class KaggleScriptExtractor(ScriptExtractor):
             .alias(episode_num_col)
         )
 
-    def _correct_pilot_episode_id(self, df: pl.LazyFrame) -> pl.LazyFrame:
-        """Corrects the episode id.
-
-        The pilot episode and next episode from this dataset are both S01E01.
-        This function indexes all season one eisodes by 1 with the exception 
-        of the pilot.
-
-        Args:
-            df: The dataframe to adjust.
-
-        Returns:
-            The adjusted dataframe.
-        """
-
-        cols = pl.LazyFrame.collect_schema(df).names()
-
-        # temporary columns
-        df = self._extract_season_and_episode(df)
-
-        # increment only for season 1
-        df = self._increment_season_one_id(df)
-        df = df.select(cols)
-
-        # reset the episode_id for the pilot: "Good News, Bad News"
-        return df.with_columns(
-            pl.when(pl.col("episode_title") == pl.lit("Good News, Bad News"))
-            .then(pl.lit("S01E01"))
-            .otherwise(pl.col("episode_id"))
-            .alias("episode_id")
-        )
-
     @staticmethod
     def _adjust_episode_num(df: pl.LazyFrame) -> pl.LazyFrame:
         """Corrects the episode number.
@@ -361,58 +417,3 @@ class KaggleScriptExtractor(ScriptExtractor):
 
         return df.with_columns((pl.col("episode_num") + 1).alias("episode_num"))
 
-    def _correct_script_pilot_episode_id(self, df: pl.LazyFrame) -> pl.LazyFrame:
-        """Corrects the episode ID and number for the scripts.
-
-        The pilot episode and next episode from this dataset are both S01E01.
-        This function splits them and adjusts the episode IDs and numbers accordingly.
-
-        Args:
-            df: The script dataframe to adjust.
-
-        Returns:
-            The adjusted script dataframe.
-        """
-        # Add a cumulative count to split on line number 
-        df = df.with_columns(
-            (pl.col("episode_id") == "S01E01").cum_sum().alias("s1e1_count")
-        )
-        df = self._extract_season_and_episode(df)
-
-        # In the full dataset S01E01 has 557 lines and the
-        # pilot is the first PILOT_SCRIPT_LINE_COUNT lines. For smaller
-        # subsets/mock fixtures, split in half.
-        split_idx = (
-            pl.when(pl.col("s1e1_count").max() > PILOT_SCRIPT_LINE_COUNT)
-            .then(PILOT_SCRIPT_LINE_COUNT)
-            .otherwise(pl.col("s1e1_count").max() // 2)
-        )
-
-        # Set pilot episode numbers to 0
-        df = df.with_columns(
-            [
-                pl.when(
-                    (pl.col("season_num") == 1)
-                    & (pl.col("s1e1_count") <= split_idx)
-                )
-                .then(0)
-                .otherwise(pl.col("ep_num"))
-                .alias("ep_num"),
-                pl.when(
-                    (pl.col("season_num") == 1)
-                    & (pl.col("s1e1_count") <= split_idx)
-                )
-                .then(0)
-                .otherwise(pl.col("episode_num"))
-                .alias("episode_num"),
-            ]
-        )
-
-        # Increment episode number by 1 for all Season 1 episodes
-        df = self._increment_season_one_num(df)
-
-        # Increment episode ID by 1 for all Season 1 episodes
-        df = self._increment_season_one_id(df)
-
-        # Drop temporary columns
-        return df.drop(["s1e1_count", "season_num", "ep_num"])

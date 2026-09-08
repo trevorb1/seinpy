@@ -121,7 +121,7 @@ class TestKaggleScriptExtractor:
                 "episode_num": [1, 1, 2, 3, 23, 24],
             }
         )
-        corrected = kaggle_extractor._correct_pilot_episode_id(raw)
+        corrected = kaggle_extractor._correct_info_pilot_episode_id(raw)
         assert isinstance(corrected, pl.LazyFrame)
         corrected = corrected.collect()
 
