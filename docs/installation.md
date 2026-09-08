@@ -46,7 +46,7 @@ Alternatively, you can pass the OMDb API key directly to `read_episodes` or Stra
 
 ## Development Installation
 
-`seinpy` uses **uv** for fast, reliable package and environment management.
+`seinpy` uses **uv** for package and environment management.
 
 ### 1. Install `uv`
 If you do not have `uv` installed, you can install it using:

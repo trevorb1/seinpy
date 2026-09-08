@@ -21,46 +21,36 @@ This page provides background information, structural details, and architectural
 The package is designed around the **Strategy Pattern**. This makes it easy to switch out the extraction source for scripts, ratings, or credits without changing the core execution engine.
 
 ```mermaid
-classDiagram
-    class Context {
-        +ScriptExtractor script_extractor
-        +CreditExtractor credit_extractor
-        +RatingExtractor rating_extractor
-        +Exporter exporter
-        +read(get_all, seasons, ...) List[Episode]
-    }
-    
-    class ScriptExtractor {
-        <<interface>>
-        +extract(episode_ref) Script
-    }
-    
-    class CreditExtractor {
-        <<interface>>
-        +extract(episode_ref) Credits
-    }
-    
-    class RatingExtractor {
-        <<interface>>
-        +extract(episode_ref) Rating
-    }
-    
-    class Exporter {
-        <<interface>>
-        +export(episodes, path)
-    }
+flowchart TD
+    subgraph ClientLayer["Client & Orchestration"]
+        Context["<b>Context</b><br/><code>seinpy.context.Context</code>"]
+    end
 
-    Context --> ScriptExtractor
-    Context --> CreditExtractor
-    Context --> RatingExtractor
-    Context --> Exporter
-    
-    ScriptExtractor <|-- KaggleScriptExtractor
-    ScriptExtractor <|-- SeinologyScriptExtractor
-    CreditExtractor <|-- OMDBCreditExtractor
-    RatingExtractor <|-- OMDBRatingExtractor
-    Exporter <|-- CsvExporter
-    Exporter <|-- DatabaseExporter
+    subgraph StrategyLayer["Strategy Contracts (seinpy.base)"]
+        direction TB
+        SE["<b>ScriptExtractor</b><br/><i>extract_script()</i>"]
+        CE["<b>CreditExtractor</b><br/><i>extract_credit()</i>"]
+        RE["<b>RatingExtractor</b><br/><i>extract_rating()</i>"]
+        EX["<b>Exporter</b><br/><i>export()</i>"]
+    end
+
+    subgraph DriverLayer["Available Implementations"]
+        direction TB
+        SE_Drivers["<b>Script Extractors</b><br/>• KaggleScriptExtractor<br/>• SeinologyScriptExtractor<br/>• SeinfeldScriptsExtractor<br/>• IMDbScriptExtractor"]
+        CE_Drivers["<b>Credit Extractors</b><br/>• OMDBCreditExtractor<br/>• RottenTomatoesCreditExtractor"]
+        RE_Drivers["<b>Rating Extractors</b><br/>• OMDBRatingExtractor<br/>• RottenTomatoesRatingExtractor"]
+        EX_Drivers["<b>Exporters</b><br/>• CsvExporter<br/>• JsonExporter<br/>• DatabaseExporter"]
+    end
+
+    Context -->|"delegates to"| SE
+    Context -->|"delegates to"| CE
+    Context -->|"delegates to"| RE
+    Context -->|"delegates to"| EX
+
+    SE -.->|"implements"| SE_Drivers
+    CE -.->|"implements"| CE_Drivers
+    RE -.->|"implements"| RE_Drivers
+    EX -.->|"implements"| EX_Drivers
 ```
 
 ### Components
@@ -79,7 +69,7 @@ When calling `read_episodes()`, you configure your source strategies using a sou
 
 ```python
 source = {
-    "script": "seinology",  # Option for script source
+    "script": "kaggle",  # Option for script source
     "credit": "omdb",       # Option for credits metadata
     "rating": "omdb",       # Option for ratings metadata
 }
@@ -91,10 +81,25 @@ source = {
 - **`kaggle`**: Extracts from Kaggle's Seinfeld script dataset.
 - **`imdb`** / **`imsdb`**: Extracts scripts from IMSDb.
 
-### Metadata Extraction Sources
+```warning
+Only `kaggle` is currently supported for script extraction
+```
+
+### Credit Extraction Sources
 - **`omdb`**: Uses the Open Movie Database (OMDb) API. Requires `OMDB_API_KEY`.
 - **`rottentomatoes`**: Scrapes Rotten Tomatoes for ratings/credits.
-- **`empty`** (Default): Skips extracting that specific metadata.
+
+```warning
+Only `omdb` is currently supported for credit extraction
+```
+
+### Rating Extraction Sources
+- **`omdb`**: Uses the Open Movie Database (OMDb) API. Requires `OMDB_API_KEY`.
+- **`rottentomatoes`**: Scrapes Rotten Tomatoes for ratings/credits.
+
+```warning
+Only `omdb` is currently supported for rating extraction
+```
 
 ### Exporter Output Types
 - **`csv`**: Writes tabular episode and line data.

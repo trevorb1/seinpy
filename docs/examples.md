@@ -60,18 +60,29 @@ episodes = read_episodes(
 `seinpy` supports exporting structured scripts directly to a relational SQLite database.
 
 ```python
-from seinpy import read_episodes, write_episodes, Source
+import os
+from seinpy import Source, read_episodes, write_episodes
 
-# Read episodes from Kaggle dataset
-episodes = read_episodes(
-    source=Source(script="kaggle"),
-    get_all=True
+# If you have **not** exported the OMDB API key
+os.environ["OMDB_API_KEY"] = "xxxxxxxx"
+
+# Instantiate the Source configuration
+source = Source(
+    script="kaggle",
+    credit="omdb",
+    rating="omdb",
 )
 
-# Export to a SQLite database file
+# Fetch episode 5 of Season 1
+episodes = read_episodes(
+    source=source,
+    seasons=[1],
+    episode_nums=[5],
+)
+
 write_episodes(
-    save_type="database",
-    save_path="seinfeld.db",
     data=episodes,
+    save_path="episodes.json",
+    save_type="json",
 )
 ```
