@@ -2,7 +2,6 @@ from pathlib import Path
 
 import polars as pl
 import pytest
-from polars.testing import assert_frame_equal
 
 from seinpy.scripts.kaggle import KaggleScriptExtractor
 
@@ -174,7 +173,6 @@ class TestKaggleScriptExtractor:
         episode_nums = corrected["episode_num"].unique().sort().to_list()
         assert episode_nums == [1, 2, 3, 4, 24, 25]
 
-
     def test_correct_2_part_episodes(self, kaggle_extractor):
         original = kaggle_extractor._read_episode_info()
         corrected = kaggle_extractor._correct_2_part_episodes(original)
@@ -232,8 +230,22 @@ class TestKaggleScriptExtractor:
         assert unique_episode_titles == ["Good News, Bad News"]
 
     def test_extract_script_error_multiple_episodes_found(self, kaggle_extractor):
-        with pytest.raises(ValueError):
-            kaggle_extractor.extract_script(episode_title="The Pilot")
+        """Test that extract_script raises ValueError when multiple episodes match."""
+        schema = kaggle_extractor.data.collect_schema()
+        corrupted_row = pl.LazyFrame(
+            {
+                "episode_num": pl.Series([999], dtype=schema["episode_num"]),
+                "episode_title": pl.Series(
+                    ["The Seinfeld Chronicles"], dtype=schema["episode_title"]
+                ),
+                "episode_id": pl.Series(["S01E01"], dtype=schema["episode_id"]),
+                "speaker": pl.Series(["JERRY"], dtype=schema["speaker"]),
+                "dialogue": pl.Series(["Duplicate"], dtype=schema["dialogue"]),
+            }
+        ).select(schema.names())
+        kaggle_extractor.data = pl.concat([kaggle_extractor.data, corrupted_row])
+        with pytest.raises(ValueError, match="Multiple episodes found"):
+            kaggle_extractor.extract_script(episode_id="S01E01")
 
     def test_extract_script_error(self, kaggle_extractor):
         with pytest.raises(ValueError):
@@ -271,4 +283,3 @@ class TestKaggleScriptExtractor:
         )
         result = KaggleScriptExtractor._increment_season_one_num(df).collect()
         assert result["episode_num"].to_list() == [1, 2, 1]
-

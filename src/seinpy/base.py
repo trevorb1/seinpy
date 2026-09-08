@@ -51,6 +51,12 @@ class ScriptExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting script for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         df = self.extract_script(episode_id, episode_num, episode_title)
         if as_df:
             return df.collect()
@@ -205,6 +211,12 @@ class RatingExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting rating for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         data = self.extract_rating(episode_id, episode_num, episode_title)
         if as_df:
             return data
@@ -306,6 +318,12 @@ class CreditExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting credit for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         data = self.extract_credit(episode_id, episode_num, episode_title)
         if as_df:
             return data.collect()

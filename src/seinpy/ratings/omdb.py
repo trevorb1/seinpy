@@ -84,7 +84,7 @@ class OMDBRatingExtractor(RatingExtractor):
         Returns:
             A dataframe with the rating for the given episode.
         """
-
+        
         df = filter_metadata(episode_id, episode_num, episode_title, "rating")
 
         imdb_id = df.select("imdb").collect().item()

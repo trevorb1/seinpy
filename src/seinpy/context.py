@@ -6,7 +6,13 @@ from typing import Any
 
 import polars as pl
 
-from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor, Source
+from seinpy.base import (
+    CreditExtractor,
+    Exporter,
+    RatingExtractor,
+    ScriptExtractor,
+    Source,
+)
 from seinpy.constants import METADATA
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
@@ -17,7 +23,7 @@ from seinpy.exporters.json import JsonExporter
 from seinpy.ratings.empty import EmptyRatingExtractor
 from seinpy.ratings.omdb import OMDBRatingExtractor
 from seinpy.ratings.rottentomatoes import RottenTomatoesRatingExtractor
-from seinpy.schema import Episode
+from seinpy.schema import Credit, Episode, Rating, Script
 from seinpy.scripts.empty import EmptyScriptExtractor
 from seinpy.scripts.imsdb import IMDbScriptExtractor
 from seinpy.scripts.kaggle import KaggleScriptExtractor
@@ -87,6 +93,42 @@ class Context:
     def exporter(self, exporter: Exporter) -> None:
         self._exporter = exporter
 
+    def _extract(
+        self,
+        data_source: str,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+        episode_id: str | None = None,
+    ) -> Script | Credit | Rating | None:
+        """Extract the episode data for a specific source component.
+
+        Args:
+            data_source: The component name to extract ("script", "credit", or "rating").
+            episode_num: The episode number to extract.
+            episode_title: The title of the episode to extract.
+            episode_id: The ID of the episode to extract.
+
+        Returns:
+            The extracted data object or None if extraction fails.
+        """
+        register = {
+            "script": self._script_extractor,
+            "credit": self._credit_extractor,
+            "rating": self._rating_extractor,
+        }
+
+        try:
+            return register[data_source].extract(
+                episode_id=episode_id,
+                episode_num=episode_num,
+                episode_title=episode_title,
+            )
+        except ValueError as e:
+            logger.warning(
+                f"Could not extract {data_source} for {episode_id or episode_num or episode_title}: {e}"
+            )
+            return None
+
     def _get_episode(
         self,
         episode_num: int | None = None,
@@ -96,9 +138,26 @@ class Context:
         """Assemble the episode data."""
         if not any([episode_id, episode_num, episode_title]):
             raise ValueError("No episode number, title, or ID provided")
-        script = self._script_extractor.extract(episode_id, episode_num, episode_title)
-        credit = self._credit_extractor.extract(episode_id, episode_num, episode_title)
-        rating = self._rating_extractor.extract(episode_id, episode_num, episode_title)
+
+        script = self._extract(
+            "script",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+        credit = self._extract(
+            "credit",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+        rating = self._extract(
+            "rating",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+
         return Episode(script=script, credit=credit, rating=rating)
 
     def _get_episodes(
@@ -167,6 +226,7 @@ class Context:
             ids = (
                 metadata.select(pl.col("episode_id"))
                 .unique()
+                .sort("episode_id")
                 .collect()
                 .to_series()
                 .to_list()
@@ -372,6 +432,15 @@ def write_episodes(
     save_path: str,
     data: list[Episode],
 ) -> None:
+    """Export episode data to a file or database.
+
+    Args:
+        save_type: The format or target storage type. Supported values are
+            "database", "csv", or "json".
+        save_path: The file path where the exported episodes will be saved.
+            Must end with the corresponding file extension (.db, .csv, or .json).
+        data: A list of Episode objects to export.
+    """
     save_path = Path(save_path)
     if save_type == "database":
         if save_path.suffix != ".db":

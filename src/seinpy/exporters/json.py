@@ -32,16 +32,20 @@ class JsonExporter(Exporter):
             episode_data = episode.model_dump()
 
             # ref will be the same for all episodes
-            for _, values in episode_data.items():
+            for values in episode_data.values():
                 # ref may not be present if credit or rating or data is empty
-                if values["ref"]:
+                if values and isinstance(values, dict) and values.get("ref"):
                     data["ref"] = values["ref"]
-                    continue
+                    break
 
             # remove ref from all other data
-            episode_data_copy = episode_data.copy()
-            for item in episode_data_copy:
-                episode_data[item].pop("ref")
+            for item in episode_data:
+                if (
+                    episode_data[item]
+                    and isinstance(episode_data[item], dict)
+                    and "ref" in episode_data[item]
+                ):
+                    episode_data[item].pop("ref")
 
             # add all other data to the data dictionary
             for key, value in episode_data.items():

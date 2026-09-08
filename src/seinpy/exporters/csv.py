@@ -87,13 +87,19 @@ class CsvExporter(Exporter):
             raise ValueError("Data must be a list of episodes or a single episode")
 
         dfs_to_concat = []
-        cols_to_join_on = episodes[0].script.ref.model_dump().keys()
+        cols_to_join_on = episodes[0].ref.model_dump().keys()
         for episode in episodes:
-            dfs = [
-                self._script_to_dataframe(episode.script),
-                self._credit_to_dataframe(episode.credit),
-                self._rating_to_dataframe(episode.rating),
-            ]
+            dfs = []
+            if episode.script:
+                dfs.append(self._script_to_dataframe(episode.script))
+            if episode.credit:
+                dfs.append(self._credit_to_dataframe(episode.credit))
+            if episode.rating:
+                dfs.append(self._rating_to_dataframe(episode.rating))
+
+            if not dfs:
+                continue
+
             dfs_to_concat.append(
                 reduce(
                     lambda left, right: left.join(

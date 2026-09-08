@@ -16,7 +16,7 @@ TWO_PART_EPISODES = [
         "episode_num": 97,
         "episode_title": "The Highlights of a Hundred",
     },
-    {"episode_id": "S07E14", "episode_num": 123, "episode_title": "The Cadillac"},
+    {"episode_id": "S07E14", "episode_num": 120, "episode_title": "The Cadillac"},
     {"episode_id": "S07E20", "episode_num": 126, "episode_title": "The Bottle Deposit"},
     {"episode_id": "S09E21", "episode_num": 171, "episode_title": "The Chronicle"},
     {"episode_id": "S09E22", "episode_num": 172, "episode_title": "The Finale"},
