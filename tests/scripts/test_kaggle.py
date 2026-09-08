@@ -244,8 +244,13 @@ class TestKaggleScriptExtractor:
             }
         ).select(schema.names())
         kaggle_extractor.data = pl.concat([kaggle_extractor.data, corrupted_row])
-        with pytest.raises(ValueError, match="Multiple episodes found"):
+        with pytest.raises(ValueError, match="More or less than one episode found"):
             kaggle_extractor.extract_script(episode_id="S01E01")
+
+    def test_extract_script_error_no_script_found(self, kaggle_extractor):
+        """Test that extract_script raises ValueError when no script is found."""
+        with pytest.raises(ValueError, match="More or less than one episode found"):
+            kaggle_extractor.extract_script(episode_id="S06E14")
 
     def test_extract_script_error(self, kaggle_extractor):
         with pytest.raises(ValueError):

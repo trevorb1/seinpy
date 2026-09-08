@@ -90,6 +90,8 @@ class OMDBRatingExtractor(RatingExtractor):
         imdb_id = df.select("imdb").collect().item()
 
         response = requests.get(f"{self.api_call}{imdb_id}").json()
+        if response.get("Response") == "False":
+            raise ValueError(f"OMDB API error: {response.get('Error', 'Unknown error')}")
 
         episode_id, episode_num, episode_title = get_episode_id_num_title(
             df, episode_id, episode_num, episode_title

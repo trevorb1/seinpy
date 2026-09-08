@@ -155,7 +155,11 @@ class ScriptExtractor(ABC):
             ]
         ).collect()
 
-        if any(count != 1 for count in unique_counts.row(0)):
+        if any(count == 0 for count in unique_counts.row(0)):
+            logger.error("No episode found")
+            return False
+
+        if any(count > 1 for count in unique_counts.row(0)):
             logger.error(f"Unique counts: {unique_counts}")
             logger.error("Multiple episodes found - episode identifiers are not unique")
             return False

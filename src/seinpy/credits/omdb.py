@@ -13,7 +13,6 @@ import requests
 
 from seinpy.base import CreditExtractor
 from seinpy.constants import OMDB_API
-from seinpy.schema import Credit
 from seinpy.utils import filter_metadata, get_episode_id_num_title, get_omdb_api_key
 
 logger = logging.getLogger(__name__)
@@ -63,6 +62,8 @@ class OMDBCreditExtractor(CreditExtractor):
 
         imdb_id = df.select("imdb").collect().item()
         response = requests.get(f"{self.api_call}{imdb_id}").json()
+        if response.get("Response") == "False":
+            raise ValueError(f"OMDB API error: {response.get('Error', 'Unknown error')}")
 
         data = {
             "episode_id": episode_id,

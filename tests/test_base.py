@@ -63,6 +63,18 @@ class TestScriptExtractor:
         )
         assert not extractor._is_one_episode(df)
 
+    def test_is_one_episode_fails_empty(self, dummy_script_extractor):
+        """Test that _is_one_episode returns False for an empty DataFrame."""
+        extractor = dummy_script_extractor
+        df = pl.LazyFrame(
+            schema={
+                "episode_id": pl.String,
+                "episode_num": pl.Int64,
+                "episode_title": pl.String,
+            }
+        )
+        assert not extractor._is_one_episode(df)
+
     def test_is_one_episode_fails_missing_columns(self, dummy_script_extractor):
         extractor = dummy_script_extractor
         df = pl.LazyFrame(
