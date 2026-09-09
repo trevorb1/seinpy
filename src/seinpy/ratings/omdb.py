@@ -67,6 +67,28 @@ class OMDBRatingExtractor(RatingExtractor):
             return "Good News, Bad News"
         return title
 
+    @staticmethod
+    def _get_rating(response: dict[str, Any]) -> str | int | float:
+        """Extract the rating from the OMDB response.
+
+        Args:
+            response: The dictionary response from the OMDB API.
+
+        Returns:
+            The extracted rating as a string, or 0 if no rating is found.
+        """
+        rating = response.get("imdbRating", "N/A")
+        if rating == "N/A":
+            ratings = response.get("Ratings", [])
+            if len(ratings) > 0:
+                rating = ratings[0].get("Value", "N/A")
+        if rating == "N/A":
+            rating = response.get("Metascore", "N/A")
+        if rating == "N/A":
+            logger.error("No rating found")
+            rating = 0
+        return rating
+
     def extract_rating(
         self,
         episode_id: str | None = None,
@@ -84,14 +106,16 @@ class OMDBRatingExtractor(RatingExtractor):
         Returns:
             A dataframe with the rating for the given episode.
         """
-        
+
         df = filter_metadata(episode_id, episode_num, episode_title, "rating")
 
         imdb_id = df.select("imdb").collect().item()
 
         response = requests.get(f"{self.api_call}{imdb_id}").json()
         if response.get("Response") == "False":
-            raise ValueError(f"OMDB API error: {response.get('Error', 'Unknown error')}")
+            raise ValueError(
+                f"OMDB API error: {response.get('Error', 'Unknown error')}"
+            )
 
         episode_id, episode_num, episode_title = get_episode_id_num_title(
             df, episode_id, episode_num, episode_title
@@ -101,7 +125,7 @@ class OMDBRatingExtractor(RatingExtractor):
 
         imdb_link = f"https://www.imdb.com/title/{imdb_id}/"
 
-        rating = response["imdbRating"]
+        rating = self._get_rating(response)
         rating = self.convert_rating_2_float(rating)
         rating *= 10  # imdb rates out of 10, seinpy rates out of 100
 
@@ -109,7 +133,7 @@ class OMDBRatingExtractor(RatingExtractor):
             "episode_id": episode_id,
             "episode_num": episode_num,
             "episode_title": episode_title,
-            "rating": rating if response["imdbRating"] != "N/A" else "",
+            "rating": rating,
             "num_votes": int(response["imdbVotes"].replace(",", ""))
             if response["imdbVotes"] != "N/A"
             else "",

@@ -1,3 +1,5 @@
+"""Tests for the OMDB rating extractor module."""
+
 import polars as pl
 import pytest
 from polars.testing import assert_frame_equal
@@ -8,6 +10,7 @@ from seinpy.schema import EpisodeRef, Rating
 
 @pytest.fixture
 def fake_df() -> pl.LazyFrame:
+    """Fixture returning a mock LazyFrame for an episode rating."""
     data = {
         "episode_id": "S01E02",
         "episode_num": 2,
@@ -20,9 +23,58 @@ def fake_df() -> pl.LazyFrame:
 
 
 class TestOMDBRatingExtractor:
+    """Tests for OMDBRatingExtractor."""
+
     def test_get_api_call(self):
+        """Test API call URL generation with API key."""
         extractor = OMDBRatingExtractor(omdb_api_key="key")
         assert extractor._get_api_call() == "http://www.omdbapi.com/?apikey=key&i="
+
+    @pytest.mark.parametrize(
+        "response, expected",
+        [
+            (
+                {"imdbRating": "7.5", "Ratings": [], "Metascore": "N/A"},
+                "7.5",
+            ),
+            (
+                {
+                    "imdbRating": "N/A",
+                    "Ratings": [{"Source": "Internet Movie Database", "Value": "8.0"}],
+                    "Metascore": "N/A",
+                },
+                "8.0",
+            ),
+            (
+                {"imdbRating": "N/A", "Ratings": [], "Metascore": "85"},
+                "85",
+            ),
+            (
+                {"imdbRating": "N/A", "Ratings": [], "Metascore": "N/A"},
+                0,
+            ),
+        ],
+    )
+    def test_get_rating(self, response: dict, expected: str | int):
+        """Test _get_rating extracts rating from imdbRating, Ratings, Metascore, or returns 0.
+
+        Args:
+            response: Mocked OMDB response dictionary.
+            expected: Expected rating output.
+        """
+        assert OMDBRatingExtractor._get_rating(response) == expected
+
+    def test_get_rating_no_rating_logs_error(self, caplog):
+        """Test _get_rating logs an error when no rating is found.
+
+        Args:
+            caplog: Pytest fixture to capture log records.
+        """
+        response = {"imdbRating": "N/A", "Ratings": [], "Metascore": "N/A"}
+        with caplog.at_level("ERROR"):
+            result = OMDBRatingExtractor._get_rating(response)
+        assert result == 0
+        assert "No rating found" in caplog.text
 
     @pytest.mark.parametrize(
         "rating, expected",
