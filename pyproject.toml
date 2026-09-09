@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "trevorb1", email = "trevor_barnes@sfu.ca" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "kagglehub>=1.0.0",
     "polars>=1.31.0",
