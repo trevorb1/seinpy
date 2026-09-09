@@ -1,13 +1,14 @@
 """Base classes for extractors and writers."""
 
 from __future__ import annotations
-from dataclasses import dataclass
 
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 import polars as pl
 
+from seinpy.constants import CreditSource, RatingSource, ScriptSource
 from seinpy.schema import (
     Actor,
     Credit,
@@ -51,6 +52,12 @@ class ScriptExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting script for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         df = self.extract_script(episode_id, episode_num, episode_title)
         if as_df:
             return df.collect()
@@ -148,7 +155,11 @@ class ScriptExtractor(ABC):
             ]
         ).collect()
 
-        if any(count != 1 for count in unique_counts.row(0)):
+        if any(count == 0 for count in unique_counts.row(0)):
+            logger.error("No episode found")
+            return False
+
+        if any(count > 1 for count in unique_counts.row(0)):
             logger.error(f"Unique counts: {unique_counts}")
             logger.error("Multiple episodes found - episode identifiers are not unique")
             return False
@@ -205,6 +216,12 @@ class RatingExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting rating for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         data = self.extract_rating(episode_id, episode_num, episode_title)
         if as_df:
             return data
@@ -306,6 +323,12 @@ class CreditExtractor(ABC):
             - Only need to provide one of episode_num, episode_title, or episode_id.
             - If multiple are provided, the priority is episode_id, then episode_num, then episode_title.
         """
+        logger.info(
+            f"Extracting credit for "
+            f"episode_id: {episode_id}, "
+            f"episode_num: {episode_num}, "
+            f"episode_title: {episode_title}"
+        )
         data = self.extract_credit(episode_id, episode_num, episode_title)
         if as_df:
             return data.collect()
@@ -396,6 +419,7 @@ class CreditExtractor(ABC):
             actors=actors,
         )
 
+
 class Exporter(ABC):
     """Base strategy class for all writers."""
 
@@ -424,7 +448,6 @@ class Source:
         rating: The source name for the ratings extractor, defaults to None.
     """
 
-    script: str
-    credit: str | None = None
-    rating: str | None = None
-
+    script: ScriptSource | str
+    credit: CreditSource | str | None = None
+    rating: RatingSource | str | None = None

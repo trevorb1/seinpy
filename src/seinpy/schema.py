@@ -123,9 +123,9 @@ class Rating(BaseModel):
     @field_validator("rating", mode="before")
     @classmethod
     def _validate_rating(cls, value: float) -> float:
-        if not value:
+        if value is None:
             logger.error("No rating found")
-            return 0
+            return 0.0
         if not 0 <= value <= 100:
             raise ValueError("rating must be between 0 and 100")
         return round(value, 2)

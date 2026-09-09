@@ -81,6 +81,7 @@ class CreditPerson(SQLModel, table=True):
 # Define the inserting functions
 ###
 
+
 def _upsert_episode_stub(session: Session, ref: schema.EpisodeRef) -> None:
     """Ensure the Episode row exists before adding child foreign keys."""
     if not ref or not ref.episode_id:
@@ -91,6 +92,7 @@ def _upsert_episode_stub(session: Session, ref: schema.EpisodeRef) -> None:
         episode_title=ref.episode_title,
     )
     session.merge(episode)
+
 
 def insert_script(session: Session, script: schema.Script) -> None:
     """Insert a Pydantic Script object into the DB."""
@@ -168,6 +170,7 @@ def insert_credit(session: Session, credit: schema.Credit) -> None:
     if people_to_add:
         session.add_all(people_to_add)
 
+
 ###
 # Full-Text Search (FTS5) DDL
 ###
@@ -205,6 +208,7 @@ END;
 # Define the Exporter
 ###
 
+
 class DatabaseExporter(Exporter):
     """Write the data to a SQLite database with FTS5 search index."""
 
@@ -214,10 +218,24 @@ class DatabaseExporter(Exporter):
         return True
 
     def export(self, data: list[schema.Episode], save_path: str | Path) -> None:
-        """Export the data to a database file with an optimized search index."""
+        """Export the data to a database file with an optimized search index.
+
+        If the database file already exists, it is overwritten to prevent
+        duplicate records.
+
+        Args:
+            data: A list of Episode objects to export.
+            save_path: Destination path ending with .db.
+
+        Raises:
+            ValueError: If the save path does not end with .db.
+        """
         path = Path(save_path).resolve()
         if path.suffix != ".db":
             raise ValueError("Save path must end with .db")
+
+        if path.exists():
+            path.unlink()
 
         # build SQLite connection URL
         engine = create_engine(f"sqlite:///{path.as_posix()}")
@@ -253,7 +271,7 @@ class DatabaseExporter(Exporter):
             # vacuum to defragment and reduce file size for deployment
             with engine.connect() as conn:
                 # SQLite requires autocommit for VACUUM
-                conn.connection.isolation_level = None 
+                conn.connection.isolation_level = None
                 conn.execute(text("VACUUM;"))
         finally:
             engine.dispose()

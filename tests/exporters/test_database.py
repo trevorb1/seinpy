@@ -172,3 +172,30 @@ class TestDatabaseExporter:
                 assert episode.episode_title == "Episode 2."
         finally:
             engine.dispose()
+
+    def test_export_overwrites_existing_db(self, fake_episode, tmp_path):
+        """Test that DatabaseExporter.export overwrites an existing database file.
+
+        Args:
+            fake_episode: Episode fixture.
+            tmp_path: Temporary directory fixture.
+        """
+        save_path = tmp_path / "test_export.db"
+        exporter = DatabaseExporter()
+
+        # Export twice to the same path
+        exporter.export([fake_episode], str(save_path))
+        exporter.export([fake_episode], str(save_path))
+
+        assert save_path.exists()
+
+        engine = create_engine(f"sqlite:///{save_path}")
+        try:
+            with Session(engine) as session:
+                lines = session.exec(
+                    text("SELECT * FROM scriptline WHERE episode_id='S01E02'")
+                ).all()
+                # Should contain exactly one set of lines (4 lines), not duplicated (8 lines)
+                assert len(lines) == 4
+        finally:
+            engine.dispose()

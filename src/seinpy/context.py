@@ -6,8 +6,20 @@ from typing import Any
 
 import polars as pl
 
-from seinpy.base import CreditExtractor, Exporter, RatingExtractor, ScriptExtractor, Source
-from seinpy.constants import METADATA
+from seinpy.base import (
+    CreditExtractor,
+    Exporter,
+    RatingExtractor,
+    ScriptExtractor,
+    Source,
+)
+from seinpy.constants import (
+    METADATA,
+    CreditSource,
+    ExporterType,
+    RatingSource,
+    ScriptSource,
+)
 from seinpy.credits.empty import EmptyCreditExtractor
 from seinpy.credits.omdb import OMDBCreditExtractor
 from seinpy.credits.rottentomatoes import RottenTomatoesCreditExtractor
@@ -17,7 +29,7 @@ from seinpy.exporters.json import JsonExporter
 from seinpy.ratings.empty import EmptyRatingExtractor
 from seinpy.ratings.omdb import OMDBRatingExtractor
 from seinpy.ratings.rottentomatoes import RottenTomatoesRatingExtractor
-from seinpy.schema import Episode
+from seinpy.schema import Credit, Episode, Rating, Script
 from seinpy.scripts.empty import EmptyScriptExtractor
 from seinpy.scripts.imsdb import IMDbScriptExtractor
 from seinpy.scripts.kaggle import KaggleScriptExtractor
@@ -87,6 +99,42 @@ class Context:
     def exporter(self, exporter: Exporter) -> None:
         self._exporter = exporter
 
+    def _extract(
+        self,
+        data_source: str,
+        episode_num: int | None = None,
+        episode_title: str | None = None,
+        episode_id: str | None = None,
+    ) -> Script | Credit | Rating | None:
+        """Extract the episode data for a specific source component.
+
+        Args:
+            data_source: The component name to extract ("script", "credit", or "rating").
+            episode_num: The episode number to extract.
+            episode_title: The title of the episode to extract.
+            episode_id: The ID of the episode to extract.
+
+        Returns:
+            The extracted data object or None if extraction fails.
+        """
+        register = {
+            "script": self._script_extractor,
+            "credit": self._credit_extractor,
+            "rating": self._rating_extractor,
+        }
+
+        try:
+            return register[data_source].extract(
+                episode_id=episode_id,
+                episode_num=episode_num,
+                episode_title=episode_title,
+            )
+        except ValueError as e:
+            logger.warning(
+                f"Could not extract {data_source} for {episode_id or episode_num or episode_title}: {e}"
+            )
+            return None
+
     def _get_episode(
         self,
         episode_num: int | None = None,
@@ -96,9 +144,26 @@ class Context:
         """Assemble the episode data."""
         if not any([episode_id, episode_num, episode_title]):
             raise ValueError("No episode number, title, or ID provided")
-        script = self._script_extractor.extract(episode_id, episode_num, episode_title)
-        credit = self._credit_extractor.extract(episode_id, episode_num, episode_title)
-        rating = self._rating_extractor.extract(episode_id, episode_num, episode_title)
+
+        script = self._extract(
+            "script",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+        credit = self._extract(
+            "credit",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+        rating = self._extract(
+            "rating",
+            episode_num=episode_num,
+            episode_title=episode_title,
+            episode_id=episode_id,
+        )
+
         return Episode(script=script, credit=credit, rating=rating)
 
     def _get_episodes(
@@ -167,6 +232,7 @@ class Context:
             ids = (
                 metadata.select(pl.col("episode_id"))
                 .unique()
+                .sort("episode_id")
                 .collect()
                 .to_series()
                 .to_list()
@@ -214,55 +280,61 @@ class Context:
 ################################################
 
 
-def _get_script_extractor(source: str | None, **kwargs: Any) -> ScriptExtractor:
+def _get_script_extractor(
+    source: ScriptSource | str | None, **kwargs: Any
+) -> ScriptExtractor:
     """Get the script extractor for the given source."""
     if source is None or source == "empty":
         return EmptyScriptExtractor()
-    elif source == "kaggle":
+    elif source == ScriptSource.KAGGLE:
         return KaggleScriptExtractor()
-    elif source == "imdb":
+    elif source == ScriptSource.IMDB:
         return IMDbScriptExtractor()
-    elif source == "seinfeldscripts":
+    elif source == ScriptSource.SEINFELDSCRIPTS:
         return SeinfeldScriptsExtractor()
-    elif source == "seinology":
+    elif source == ScriptSource.SEINOLOGY:
         return SeinologyScriptExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_credit_extractor(source: str | None, **kwargs: Any) -> CreditExtractor:
+def _get_credit_extractor(
+    source: CreditSource | str | None, **kwargs: Any
+) -> CreditExtractor:
     """Get the credit extractor for the given source."""
     if source is None or source == "empty":
         return EmptyCreditExtractor()
-    elif source == "omdb":
+    elif source == CreditSource.OMDB:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBCreditExtractor(omdb_api_key=omdb_api_key)
-    elif source == "rottentomatoes":
+    elif source == CreditSource.ROTTENTOMATOES:
         return RottenTomatoesCreditExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_rating_extractor(source: str | None, **kwargs: Any) -> RatingExtractor:
+def _get_rating_extractor(
+    source: RatingSource | str | None, **kwargs: Any
+) -> RatingExtractor:
     """Get the rating extractor for the given source."""
     if source is None or source == "empty":
         return EmptyRatingExtractor()
-    elif source == "omdb":
+    elif source == RatingSource.OMDB:
         omdb_api_key = kwargs.get("omdb_api_key", None)
         return OMDBRatingExtractor(omdb_api_key=omdb_api_key)
-    elif source == "rottentomatoes":
+    elif source == RatingSource.ROTTENTOMATOES:
         return RottenTomatoesRatingExtractor()
     else:
         raise ValueError(f"Invalid source: {source}")
 
 
-def _get_exporter(save_type: str, **kwargs: Any) -> Exporter:
+def _get_exporter(save_type: ExporterType | str, **kwargs: Any) -> Exporter:
     """Get the exporter for the given save type."""
-    if save_type == "database":
+    if save_type == ExporterType.DATABASE:
         return DatabaseExporter(**kwargs)
-    elif save_type == "csv":
+    elif save_type == ExporterType.CSV:
         return CsvExporter(**kwargs)
-    elif save_type == "json":
+    elif save_type == ExporterType.JSON:
         return JsonExporter(**kwargs)
     else:
         raise ValueError(f"Invalid save type: {save_type}")
@@ -368,18 +440,27 @@ def read_episodes(
 
 
 def write_episodes(
-    save_type: str,
+    save_type: ExporterType | str,
     save_path: str,
     data: list[Episode],
 ) -> None:
+    """Export episode data to a file or database.
+
+    Args:
+        save_type: The format or target storage type. Supported values are
+            ExporterType members or strings.
+        save_path: The file path where the exported episodes will be saved.
+            Must end with the corresponding file extension (.db, .csv, or .json).
+        data: A list of Episode objects to export.
+    """
     save_path = Path(save_path)
-    if save_type == "database":
+    if save_type == ExporterType.DATABASE:
         if save_path.suffix != ".db":
             raise ValueError("Save path must end with .db")
-    elif save_type == "csv":
+    elif save_type == ExporterType.CSV:
         if save_path.suffix != ".csv":
             raise ValueError("Save path must end with .csv")
-    elif save_type == "json":
+    elif save_type == ExporterType.JSON:
         if save_path.suffix != ".json":
             raise ValueError("Save path must end with .json")
     else:

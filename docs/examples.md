@@ -12,7 +12,8 @@ This example demonstrates how to read all Seinfeld episode scripts from the Kagg
 from seinpy import read_episodes, write_episodes, Source
 
 # Configure source
-source = Source(script="kaggle")
+# Select any of script, credit, and rating sources.
+source = Source(script="kaggle", credit="omdb", rating="omdb")
 
 # Read scripts
 episodes = read_episodes(source=source, get_all=True)
@@ -27,62 +28,52 @@ write_episodes(
 
 ---
 
-## 2. Using Custom Sources and Extractors
+## 2. Filtering by episode number
 
-You can configure different extractors for scripts, credits, and ratings. Here is how to configure `seinpy` to use Seinology scripts combined with OMDb credits.
+To filter by episode number, use the `episode_nums` parameter in the `read_episodes` function.
 
 ```python
-import os
-from seinpy import read_episodes, Source
+from seinpy import read_episodes, write_episodes, Source
 
-# Ensure you have your OMDb API Key set
-os.environ["OMDB_API_KEY"] = "your_api_key"
+# Configure source
+# Select any of script, credit, and rating sources.
+source = Source(script="kaggle", credit="omdb", rating="omdb")
 
-# Instantiate the Source configuration
-source = Source(
-    script="seinology",
-    credit="omdb",
-    rating="omdb",
-)
+# Read episodes 1 and 2 of season 1
+episodes = read_episodes(source=source, seasons=[1], episode_nums=[1, 2])
 
-# Fetch episode 1 of Season 1
-episodes = read_episodes(
-    source=source,
-    seasons=[1],
-    episode_nums=[1],
+# Export the episodes into a single CSV file
+write_episodes(
+    save_type="csv",
+    save_path="seinfeld_episodes.csv",
+    data=episodes,
 )
 ```
 
 ---
 
-## 3. Exporting to a Database
+## 3. Changing the logging level
 
-`seinpy` supports exporting structured scripts directly to a relational SQLite database.
+To change the logging level, import `configure_logging` from the `seinpy.logging` module and set the desired level.
 
 ```python
-import os
-from seinpy import Source, read_episodes, write_episodes
+from seinpy import read_episodes, write_episodes, Source
+from seinpy.logging import LogLevels, configure_logging
 
-# If you have **not** exported the OMDB API key
-os.environ["OMDB_API_KEY"] = "xxxxxxxx"
+# Set logging level to INFO and above
+configure_logging(LogLevels.info)
 
-# Instantiate the Source configuration
-source = Source(
-    script="kaggle",
-    credit="omdb",
-    rating="omdb",
-)
+# Configure source
+# Select any of script, credit, and rating sources.
+source = Source(script="kaggle", credit="omdb", rating="omdb")
 
-# Fetch episode 5 of Season 1
-episodes = read_episodes(
-    source=source,
-    seasons=[1],
-    episode_nums=[5],
-)
+# Read scripts
+episodes = read_episodes(source=source, seasons=[1], episode_nums=[1, 2])
 
+# Export the episodes into a single SQLite database file
 write_episodes(
+    save_type="database",
+    save_path="seinfeld_episodes.db",
     data=episodes,
-    save_path="episodes.json",
-    save_type="json",
 )
 ```

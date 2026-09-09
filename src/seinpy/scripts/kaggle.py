@@ -10,7 +10,7 @@ import kagglehub
 import polars as pl
 
 from seinpy.base import ScriptExtractor
-from seinpy.constants import TWO_PART_EPISODES
+from seinpy.constants import METADATA, TWO_PART_EPISODES
 from seinpy.utils import (
     filter_metadata,
     get_episode_id_num_title,
@@ -91,7 +91,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         # Check that we only have one episode
         if not self._is_one_episode(df):
             raise ValueError(
-                f"Multiple episodes found with: \n"
+                f"More or less than one episode found with: \n"
                 f"episode_id: {episode_id} \n"
                 f"episode_num: {episode_num} \n"
                 f"episode_title: {episode_title}"
@@ -113,10 +113,17 @@ class KaggleScriptExtractor(ScriptExtractor):
         script = self._read_script()
         episode_info = self._read_episode_info()
 
-        return (
+        df = (
             self._join_script_and_info(episode_info, script)
             .pipe(self._convert_episodeid_to_episodenum)
             .pipe(self._correct_2_part_episodes)
+        )
+
+        meta_cols = METADATA.select(["episode_id", "episode_num", "episode_title"])
+        return (
+            df.drop(["episode_num", "episode_title"])
+            .join(meta_cols, on="episode_id", how="left")
+            .pipe(self._coordinate_columns)
         )
 
     @staticmethod
@@ -159,6 +166,7 @@ class KaggleScriptExtractor(ScriptExtractor):
                     "SEID": "episode_id",
                 }
             )
+            .with_columns(pl.col("dialogue").fill_null(""))
             .pipe(self._correct_script_pilot_episode_id)
         )
 
@@ -174,7 +182,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         Returns:
             The adjusted script dataframe.
         """
-        # Add a cumulative count to split on line number 
+        # Add a cumulative count to split on line number
         df = df.with_columns(
             (pl.col("episode_id") == "S01E01").cum_sum().alias("s1e1_count")
         )
@@ -193,15 +201,13 @@ class KaggleScriptExtractor(ScriptExtractor):
         df = df.with_columns(
             [
                 pl.when(
-                    (pl.col("season_num") == 1)
-                    & (pl.col("s1e1_count") <= split_idx)
+                    (pl.col("season_num") == 1) & (pl.col("s1e1_count") <= split_idx)
                 )
                 .then(0)
                 .otherwise(pl.col("ep_num"))
                 .alias("ep_num"),
                 pl.when(
-                    (pl.col("season_num") == 1)
-                    & (pl.col("s1e1_count") <= split_idx)
+                    (pl.col("season_num") == 1) & (pl.col("s1e1_count") <= split_idx)
                 )
                 .then(0)
                 .otherwise(pl.col("episode_num"))
@@ -248,7 +254,7 @@ class KaggleScriptExtractor(ScriptExtractor):
         """Corrects the episode id.
 
         The pilot episode and next episode from this dataset are both S01E01.
-        This function indexes all season one eisodes by 1 with the exception 
+        This function indexes all season one eisodes by 1 with the exception
         of the pilot.
 
         Args:
@@ -416,4 +422,3 @@ class KaggleScriptExtractor(ScriptExtractor):
         )
 
         return df.with_columns((pl.col("episode_num") + 1).alias("episode_num"))
-
