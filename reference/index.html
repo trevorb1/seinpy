@@ -195,6 +195,18 @@
       
     
     
+      <div class="md-header__source">
+        <a href="https://github.com/trevorb1/seinpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trevorb1/seinpy
+  </div>
+</a>
+      </div>
+    
   </nav>
   
 </header>
@@ -228,6 +240,18 @@
     </a>
     seinpy
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trevorb1/seinpy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trevorb1/seinpy
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -682,17 +706,22 @@
                   
 
 
+  
+  
+
 
 <h1 id="reference">Reference</h1>
 <p>This page provides background information, structural details, and architectural patterns of the <strong>seinpy</strong> package.</p>
 <hr />
 <h2 id="about-background">About &amp; Background</h2>
-<p><code>seinpy</code> was built to address the lack of structured, easily accessible datasets containing Seinfeld episode scripts and their associated metadata. While transcript datasets exist, they are often inconsistent in formatting, missing key details, or lack external validation (such as IMDb/OMDb user ratings and credits).</p>
-<p><code>seinpy</code> acts as a unified pipeline that:
-1. Downloads and parses raw scripts from multiple web sources.
-2. Cross-references episodes against metadata to resolve inconsistencies in season and episode numbering.
-3. Automatically fetches rich metadata (cast credits, rating distributions).
-4. Exports the compiled data into CSV, JSON, or SQL Databases.</p>
+<p><code>seinpy</code> was built to address the lack of structured, easily accessible datasets containing Seinfeld episode scripts and their associated metadata. While script transcript datasets exist, they are often inconsistent in formatting, missing key details, or lack metadata (such as user ratings and cast/crew credits).</p>
+<p><code>seinpy</code> acts as a data pipeline that:</p>
+<ol>
+<li>Downloads and parses raw scripts from multiple web sources.</li>
+<li>Cross-references episodes against metadata to resolve inconsistencies in season and episode numbering.</li>
+<li>Automatically fetches rich metadata (cast credits, rating distributions).</li>
+<li>Exports the compiled data into CSV, JSON, or SQL Databases.</li>
+</ol>
 <hr />
 <h2 id="architecture">Architecture</h2>
 <p>The package is designed around the <strong>Strategy Pattern</strong>. This makes it easy to switch out the extraction source for scripts, ratings, or credits without changing the core execution engine.</p>
@@ -750,22 +779,28 @@
 <li><strong><code>kaggle</code></strong>: Extracts from Kaggle's Seinfeld script dataset.</li>
 <li><strong><code>imdb</code></strong> / <strong><code>imsdb</code></strong>: Extracts scripts from IMSDb.</li>
 </ul>
-<div class="highlight"><pre><span></span><code>Only `kaggle` is currently supported for script extraction
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Only <code>kaggle</code> is currently supported for script extraction</p>
+</div>
 <h3 id="credit-extraction-sources">Credit Extraction Sources</h3>
 <ul>
 <li><strong><code>omdb</code></strong>: Uses the Open Movie Database (OMDb) API. Requires <code>OMDB_API_KEY</code>.</li>
 <li><strong><code>rottentomatoes</code></strong>: Scrapes Rotten Tomatoes for ratings/credits.</li>
 </ul>
-<div class="highlight"><pre><span></span><code>Only `omdb` is currently supported for credit extraction
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Only <code>omdb</code> is currently supported for credit extraction</p>
+</div>
 <h3 id="rating-extraction-sources">Rating Extraction Sources</h3>
 <ul>
 <li><strong><code>omdb</code></strong>: Uses the Open Movie Database (OMDb) API. Requires <code>OMDB_API_KEY</code>.</li>
 <li><strong><code>rottentomatoes</code></strong>: Scrapes Rotten Tomatoes for ratings/credits.</li>
 </ul>
-<div class="highlight"><pre><span></span><code>Only `omdb` is currently supported for rating extraction
-</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Only <code>omdb</code> is currently supported for rating extraction</p>
+</div>
 <h3 id="exporter-output-types">Exporter Output Types</h3>
 <ul>
 <li><strong><code>csv</code></strong>: Writes tabular episode and line data.</li>
