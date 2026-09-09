@@ -6,9 +6,10 @@ This page provides background information, structural details, and architectural
 
 ## About & Background
 
-`seinpy` was built to address the lack of structured, easily accessible datasets containing Seinfeld episode scripts and their associated metadata. While transcript datasets exist, they are often inconsistent in formatting, missing key details, or lack external validation (such as IMDb/OMDb user ratings and credits).
+`seinpy` was built to address the lack of structured, easily accessible datasets containing Seinfeld episode scripts and their associated metadata. While script transcript datasets exist, they are often inconsistent in formatting, missing key details, or lack metadata (such as user ratings and cast/crew credits).
 
-`seinpy` acts as a unified pipeline that:
+`seinpy` acts as a data pipeline that:
+
 1. Downloads and parses raw scripts from multiple web sources.
 2. Cross-references episodes against metadata to resolve inconsistencies in season and episode numbering.
 3. Automatically fetches rich metadata (cast credits, rating distributions).
@@ -81,25 +82,25 @@ source = {
 - **`kaggle`**: Extracts from Kaggle's Seinfeld script dataset.
 - **`imdb`** / **`imsdb`**: Extracts scripts from IMSDb.
 
-```warning
-Only `kaggle` is currently supported for script extraction
-```
+!!! warning
+
+    Only `kaggle` is currently supported for script extraction
 
 ### Credit Extraction Sources
 - **`omdb`**: Uses the Open Movie Database (OMDb) API. Requires `OMDB_API_KEY`.
 - **`rottentomatoes`**: Scrapes Rotten Tomatoes for ratings/credits.
 
-```warning
-Only `omdb` is currently supported for credit extraction
-```
+!!! warning
+
+    Only `omdb` is currently supported for credit extraction
 
 ### Rating Extraction Sources
 - **`omdb`**: Uses the Open Movie Database (OMDb) API. Requires `OMDB_API_KEY`.
 - **`rottentomatoes`**: Scrapes Rotten Tomatoes for ratings/credits.
 
-```warning
-Only `omdb` is currently supported for rating extraction
-```
+!!! warning
+
+    Only `omdb` is currently supported for rating extraction
 
 ### Exporter Output Types
 - **`csv`**: Writes tabular episode and line data.
