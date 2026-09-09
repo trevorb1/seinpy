@@ -44,15 +44,15 @@ body:
     validations:
       required: false
   - type: dropdown
-    id: Python Version
+    id: python-version
     attributes:
-      label: Operating System
+      label: Python Version
       description: What Python version are you running?
       options:
-        - 3.13
-        - 3.14
-        - 3.15
-        - 3.16
+        - "3.13"
+        - "3.14"
+        - "3.15"
+        - "3.16"
         - Other
     validations:
       required: false

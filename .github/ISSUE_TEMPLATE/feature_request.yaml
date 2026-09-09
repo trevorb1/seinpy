@@ -18,5 +18,4 @@ body:
       description: Do you have a suggestion for how to solve the problem or limitation? A clear and concise description of what you want to happen and how you envision it working.
       placeholder: Describe your proposed solution or feature...
     validations:
-      required: fasle
-
+      required: false
