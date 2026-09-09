@@ -1,6 +1,8 @@
 site_name: seinpy
 site_description: "Seinfeld Script Database documentation"
 site_author: "trevorb1"
+repo_url: https://github.com/trevorb1/seinpy
+repo_name: trevorb1/seinpy
 
 theme:
   name: material
@@ -47,6 +49,8 @@ nav:
   - API Reference: api.md
 
 markdown_extensions:
+  - admonition
+  - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
