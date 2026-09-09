@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Seinfeld Script Database"
 readme = "README.md"
 authors = [
-    { name = "trevorb1", email = "trevor_barnes@sfu.ca" }
+    { name = "trevorb1"}
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -29,7 +29,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "marimo>=0.23.14",
     "pytest>=8.4.1",
     "pytest-cov>=7.0.0",
 ]
