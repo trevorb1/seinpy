@@ -1,0 +1,65 @@
+name: Bug Report
+description: File a bug report to help improve seinpy.
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproducible Example
+      description: Please provide a minimal script or code snippet that reproduces the bug.
+      render: python
+      value: |
+        from seinpy import read_episodes, write_episodes
+
+        # Write a minimal example that reproduces the bug
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Output / Traceback
+      description: Please copy and paste any error logs or stack traces.
+      render: shell
+      placeholder: Paste traceback or terminal output here
+    validations:
+      required: false
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you running?
+      options:
+        - Linux
+        - MacOS
+        - Windows
+    validations:
+      required: false
+  - type: dropdown
+    id: Python Version
+    attributes:
+      label: Operating System
+      description: What Python version are you running?
+      options:
+        - 3.13
+        - 3.14
+        - 3.15
+        - 3.16
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, code snippets, or screenshots about the problem here.
+    validations:
+      required: false
