@@ -1,6 +1,6 @@
 # Seinpy
 
-Welcome to **`seinpy`**, an extensible Python tool to build and programmatically access data on Seinfeld scripts! `seinpy` can be used to analyze character dialogues, study the structure of episodes, or extract ratingand credits information.
+Welcome to **`seinpy`**, an extensible Python tool to build and programmatically access data on Seinfeld scripts! `seinpy` can be used to analyze character dialogues, study the structure of episodes, or extract rating and credit information.
 
 ![seinpy](assets/seinpy.png)
 
