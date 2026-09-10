@@ -1,4 +1,4 @@
-"""Main data schema"""
+"""Main data schema for Seinfeld episode components."""
 
 import logging
 import re
@@ -10,52 +10,105 @@ logger = logging.getLogger(__name__)
 
 
 def capitalize_name(value: str) -> str:
-    """Capitalize and clean name."""
+    """Capitalize and clean a name string.
+
+    Args:
+        value: Name string to capitalize and clean.
+
+    Returns:
+        Cleaned, title-cased string.
+    """
     return value.strip().title()
 
 
 class ScriptLine(BaseModel):
+    """A single line of dialogue spoken by a character in an episode.
+
+    Attributes:
+        speaker: Character name speaking the dialogue.
+        dialogue: Spoken dialogue text.
+    """
+
     speaker: str
     dialogue: str
 
     @field_validator("speaker", mode="after")
     def _capitalize(cls, value: str) -> str:
+        """Capitalize and clean speaker name."""
         return capitalize_name(value)
 
 
 class Actor(BaseModel):
+    """Actor credit information including actor name and role portrayed.
+
+    Attributes:
+        name: Full name of the actor.
+        role: Character or role portrayed by the actor, if available.
+    """
+
     name: str
     role: str | None = None
 
     @field_validator("name", "role", mode="after")
     def _capitalize(cls, value: str | None) -> str | None:
+        """Capitalize and clean name and role."""
         if value is None:
             return value
         return capitalize_name(value)
 
 
 class Writer(BaseModel):
+    """Writer credit information for an episode.
+
+    Attributes:
+        name: Full name of the writer.
+    """
+
     name: str
 
     @field_validator("name", mode="after")
     def _capitalize(cls, value: str) -> str:
+        """Capitalize and clean writer name."""
         return capitalize_name(value)
 
 
 class Director(BaseModel):
+    """Director credit information for an episode.
+
+    Attributes:
+        name: Full name of the director.
+    """
+
     name: str
 
     @field_validator("name", mode="after")
     def _capitalize(cls, value: str) -> str:
+        """Capitalize and clean director name."""
         return capitalize_name(value)
 
 
 class EpisodeRef(BaseModel):
+    """Reference identifiers for a specific episode.
+
+    Attributes:
+        episode_id: Episode identifier in 'SxxExx' format (e.g. 'S01E02').
+        episode_num: Overall episode number.
+        episode_title: Title of the episode.
+    """
+
     episode_id: str | None = None
     episode_num: int | None = None
     episode_title: str | None = None
 
     def __eq__(self, other: object) -> bool:
+        """Check equality against another EpisodeRef instance.
+
+        Args:
+            other: Object to compare with.
+
+        Returns:
+            True if all reference fields match, False otherwise.
+        """
         if not isinstance(other, EpisodeRef):
             return False
         return (
@@ -65,10 +118,19 @@ class EpisodeRef(BaseModel):
         )
 
     def __str__(self) -> str:
+        """Return human-readable representation of episode reference.
+
+        Returns:
+            Formatted episode reference string.
+        """
         return f"EpisodeRef: {self.episode_id} (Num: {self.episode_num}, Title: {self.episode_title})"
 
     def __bool__(self) -> bool:
-        """Return True if any of the reference fields are set."""
+        """Return True if any of the reference fields are set.
+
+        Returns:
+            True if at least one reference field is not None.
+        """
         return any(
             [
                 self.episode_id is not None,
@@ -105,11 +167,27 @@ class EpisodeRef(BaseModel):
 
 
 class Script(BaseModel):
+    """Complete episode script comprising dialogue lines and episode reference.
+
+    Attributes:
+        ref: Episode reference identifying the episode.
+        script_lines: Ordered list of script lines in the episode.
+    """
+
     ref: EpisodeRef
     script_lines: list[ScriptLine]
 
 
 class Rating(BaseModel):
+    """Episode rating details from a rating source.
+
+    Attributes:
+        ref: Episode reference identifying the episode.
+        rating: Rating score between 0 and 100.
+        num_votes: Number of votes or reviews contributing to the rating.
+        link: URL linking to the rating page.
+    """
+
     ref: EpisodeRef
     rating: float | None = None
     num_votes: int | None = None
@@ -118,11 +196,13 @@ class Rating(BaseModel):
     @field_validator("num_votes", mode="before")
     @classmethod
     def _validate_num_votes(cls, value: int | None) -> int:
+        """Default number of votes to 0 if None or empty."""
         return value if value else 0
 
     @field_validator("rating", mode="before")
     @classmethod
     def _validate_rating(cls, value: float) -> float:
+        """Validate and round the episode rating between 0 and 100."""
         if value is None:
             logger.error("No rating found")
             return 0.0
@@ -133,6 +213,7 @@ class Rating(BaseModel):
     @field_validator("link", mode="before")
     @classmethod
     def _validate_link(cls, value: str | None) -> str | None:
+        """Validate that the rating link is a valid URL."""
         if not value:
             return ""
         if not value.startswith("http"):
@@ -141,6 +222,17 @@ class Rating(BaseModel):
 
 
 class Credit(BaseModel):
+    """Episode production credits, including air date, cast, and crew.
+
+    Attributes:
+        ref: Episode reference identifying the episode.
+        description: Brief synopsis or overview of the episode.
+        date: Air date of the episode.
+        writers: List of credited writers for the episode.
+        directors: List of credited directors for the episode.
+        actors: List of credited cast members for the episode.
+    """
+
     ref: EpisodeRef
     description: str | None = None
     date: str | None = None
@@ -150,7 +242,13 @@ class Credit(BaseModel):
 
 
 class Episode(BaseModel):
-    """Episode schema composed of script, rating, and credit data."""
+    """Episode schema composed of script, rating, and credit data.
+
+    Attributes:
+        script: Script data for the episode.
+        rating: Rating data for the episode.
+        credit: Production credit data for the episode.
+    """
 
     script: Script | None = None
     rating: Rating | None = None
@@ -169,7 +267,7 @@ class Episode(BaseModel):
 
     @model_validator(mode="after")
     def _validate_metadata(self) -> Self:
-        """Validate episode metadata agaisnt one another."""
+        """Validate episode metadata against one another."""
         refs = {}
         if self.script:
             refs["script"] = self.script.ref
