@@ -22,7 +22,15 @@ This section provides auto-generated API documentation for the core functions, c
 
 ::: seinpy.schema.Episode
 
+::: seinpy.schema.EpisodeRef
+
+::: seinpy.schema.Script
+
 ::: seinpy.schema.ScriptLine
+
+::: seinpy.schema.Rating
+
+::: seinpy.schema.Credit
 
 ::: seinpy.schema.Actor
 
