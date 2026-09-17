@@ -1,4 +1,9 @@
 # seinpy
+
+[![Python Versions](https://img.shields.io/badge/python-3.12_%7C_3.13_%7C_3.14-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/github/license/trevorb1/seinpy)](LICENSE)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/trevorb1/seinpy/badges/coverage.json)](https://github.com/trevorb1/seinpy/actions/workflows/coverage.yaml)
+
 `Seinpy` is an extensible Python tool to build and programatically access data on Seinfeld scripts!
 
 ## Project Structure
